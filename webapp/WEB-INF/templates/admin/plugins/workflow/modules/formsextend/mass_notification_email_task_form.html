@@ -1,0 +1,37 @@
+<#assign checkedEmailConfig=false />
+<#if config?? && config.emailConfig?? && config.emailConfig?c == 'true'>
+	<#assign checkedEmailConfig=true />
+</#if>
+<@formGroup labelKey='#i18n{module.workflow.formsextend.task_mass_notification_email.config.labelQuestion}' >
+	<@checkBox name='isEmailConfigCheck' id='isEmailConfigCheck'  value='${(config.emailConfig?c)!}' checked=checkedEmailConfig />
+	<@input type='hidden' name='emailConfig' id='emailConfig'  value='${(config.emailConfig?c)!}' />
+</@formGroup>
+<@div id='contentEmailConfig'>
+	<@formGroup labelKey='#i18n{module.workflow.formsextend.task_mass_notification_email.config.labelSubject}' helpKey='#i18n{module.workflow.formsextend.task_mass_notification_email.config.labelSubjectHelp}' mandatory=true>
+		<@input type='text' id='subjectForEmail' name='subjectForEmail' value='${(config.subjectForEmail)!}' mandatory=true></@input>
+	</@formGroup>
+	<@formGroup labelKey='#i18n{module.workflow.formsextend.task_mass_notification_email.config.labelSenderName}' helpKey='#i18n{module.workflow.formsextend.task_mass_notification_email.config.labelSenderNameHelp}' max=255 mandatory=true>
+		<@input type='text' id='senderNameForEmail' name='senderNameForEmail' value='${(config.senderNameForEmail)!}' mandatory=true></@input>
+	</@formGroup>
+	<@formGroup labelKey='#i18n{module.workflow.formsextend.task_mass_notification_email.config.labelSenderEmail}' helpKey='#i18n{module.workflow.formsextend.task_mass_notification_email.config.labelSenderEmailHelp}' max=255 mandatory=true>
+		<@input type='text' id='senderEmailForEmail' name='senderEmailForEmail' value='${(config.senderEmailForEmail)!}' mandatory=true></@input>
+	</@formGroup>
+	<@formGroup labelKey='#i18n{module.workflow.formsextend.task_mass_notification_email.config.labelExtenderTypes}' helpKey='#i18n{module.workflow.formsextend.task_mass_notification_email.config.labelExtenderTypesHelp}' mandatory=true >
+		<#if extenderTypes?? && extenderTypes?has_content>
+		<#list extenderTypes as extender>
+		<#assign checked = false>
+		<#if config?? && config.listExtenderTypesForEmail??>
+			<#list config.listExtenderTypesForEmail as extenderType>
+				<#if extenderType == extender.code>
+					<#assign checked = true>
+				</#if>
+			</#list>
+		</#if>
+		<@checkBox name='listExtenderTypesForEmail' class='listExtenderTypesForEmail' labelKey='${extender.name}' value='${extender.code}' checked=checked></@checkBox>
+		</#list>
+		</#if>
+	</@formGroup>
+	<@formGroup labelKey='#i18n{module.workflow.formsextend.task_mass_notification_email.config.labelMessage}' helpKey='#i18n{module.workflow.formsextend.task_mass_notification_email.config.labelMessageHelp}' mandatory=true>
+		<@input type='textarea' id='messageForEmail' name='messageForEmail' value='${(config.messageForEmail)!}' rows=6 cols=100 richtext=true mandatory=true >${(config.messageForEmail)!}</@input>
+	</@formGroup>
+</@div>
