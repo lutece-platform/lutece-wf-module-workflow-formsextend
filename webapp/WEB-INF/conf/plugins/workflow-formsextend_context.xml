@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:tx="http://www.springframework.org/schema/tx" xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+    xmlns:p="http://www.springframework.org/schema/p"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context-3.0.xsd
+       http://www.springframework.org/schema/tx
+       http://www.springframework.org/schema/tx/spring-tx-3.0.xsd">
+
+    <!-- DAO -->
+    <bean id="workflow-formsextend.taskMassNotificationConfigDAO"
+        class="fr.paris.lutece.plugins.workflow.modules.formsextend.business.MassNotificationTaskConfigDAO" />
+
+    <!-- Services -->
+    <bean id="workflow-formsextend.taskMassNotificationConfigService"
+        class="fr.paris.lutece.plugins.workflowcore.service.config.TaskConfigService"
+        p:taskConfigDAO-ref="workflow-formsextend.taskMassNotificationConfigDAO" />
+    <bean id="workflow-formsextend.massNotificationService"
+        class="fr.paris.lutece.plugins.workflow.modules.formsextend.service.MassNotificationService" />
+        
+    <!-- Task -->
+    <bean id="workflow-formsextend.taskMassNotification"
+        class="fr.paris.lutece.plugins.workflowcore.business.task.TaskType"
+        p:key="taskMassNotification" p:titleI18nKey="module.workflow.formsextend.task_mass_notification.title"
+        p:beanName="workflow-formsextend.massNotificationTask"
+        p:configBeanName="workflow-formsextend.massNotificationTaskConfig"
+        p:configRequired="true" p:formTaskRequired="true"
+        p:taskForAutomaticAction="true" />
+
+    <bean id="workflow-formsextend.massNotificationTask"
+        class="fr.paris.lutece.plugins.workflow.modules.formsextend.service.MassNotificationTask"
+        scope="prototype" />
+        
+    <bean id="workflow-formsextend.massNotificationTaskConfig"
+        class="fr.paris.lutece.plugins.workflow.modules.formsextend.business.MassNotificationTaskConfig"
+        scope="prototype" />
+
+    <bean id="workflow-formsextend.massNotificationTaskComponent"
+        class="fr.paris.lutece.plugins.workflow.modules.formsextend.web.MassNotificationTaskComponent"
+        p:taskType-ref="workflow-formsextend.taskMassNotification"
+        p:taskConfigService-ref="workflow-formsextend.taskMassNotificationConfigService" />
+
+</beans>
