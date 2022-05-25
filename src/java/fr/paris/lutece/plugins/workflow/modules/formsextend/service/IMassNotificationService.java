@@ -39,6 +39,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import fr.paris.lutece.plugins.workflow.modules.formsextend.business.MassNotificationTaskConfig;
 import fr.paris.lutece.plugins.workflowcore.business.resource.ResourceHistory;
+import fr.paris.lutece.plugins.workflowcore.service.task.ITask;
 import fr.paris.lutece.util.ReferenceList;
 
 /**
@@ -50,10 +51,10 @@ public interface IMassNotificationService
 {
     /**
      * Get available markers
-     * 
+     * @param task
      * @return reference list of available markers
      */
-    ReferenceList getAvailableMarkers( );
+    ReferenceList getAvailableMarkers( ITask task );
 
     /**
      * Get available markers values
