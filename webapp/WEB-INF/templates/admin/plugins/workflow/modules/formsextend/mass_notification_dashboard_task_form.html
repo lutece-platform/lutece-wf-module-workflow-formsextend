@@ -13,7 +13,7 @@
 	<@formGroup labelKey='#i18n{module.workflow.formsextend.task_mass_notification_dashboard.config.labelSender}' helpKey='#i18n{module.workflow.formsextend.task_mass_notification_dashboard.config.labelSenderHelp}' max=255 mandatory=true>
 		<@input type='text' id="senderForDashboard" name='senderForDashboard' value='${(config.senderForDashboard)!}' mandatory=true></@input>
 	</@formGroup>
-	<@formGroup labelKey='#i18n{module.workflow.formsextend.task_mass_notification_dashboard.config.labelExtenderTypes}' helpKey='#i18n{module.workflow.formsextend.task_mass_notification_dashboard.config.labelExtenderTypesHelp}' mandatory=true >
+	<@formGroup labelKey='#i18n{module.workflow.formsextend.task_mass_notification_dashboard.config.labelExtenderTypes}' helpKey='#i18n{module.workflow.formsextend.task_mass_notification_dashboard.config.labelExtenderTypesHelp}'>
 		<#if extenderTypes?? && extenderTypes?has_content>
 		<#list extenderTypes as extender>
 		<#assign checked = false>

@@ -37,7 +37,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -56,6 +55,8 @@ import fr.paris.lutece.plugins.extend.business.extender.history.ResourceExtender
 import fr.paris.lutece.plugins.extend.business.extender.history.ResourceExtenderHistoryFilter;
 import fr.paris.lutece.plugins.extend.service.extender.history.IResourceExtenderHistoryService;
 import fr.paris.lutece.plugins.extend.service.extender.history.ResourceExtenderHistoryService;
+import fr.paris.lutece.plugins.forms.business.Form;
+import fr.paris.lutece.plugins.forms.business.FormHome;
 import fr.paris.lutece.plugins.forms.business.FormQuestionResponse;
 import fr.paris.lutece.plugins.forms.business.FormResponse;
 import fr.paris.lutece.plugins.forms.business.FormResponseHome;
@@ -63,9 +64,15 @@ import fr.paris.lutece.plugins.forms.business.FormResponseStep;
 import fr.paris.lutece.plugins.forms.business.Question;
 import fr.paris.lutece.plugins.forms.business.QuestionHome;
 import fr.paris.lutece.plugins.genericattributes.business.Response;
+import fr.paris.lutece.plugins.mylutece.modules.cacheuserattribute.service.CacheUserAttributeService;
 import fr.paris.lutece.plugins.workflow.modules.formsextend.business.MassNotificationTaskConfig;
 import fr.paris.lutece.plugins.workflow.modules.formsextend.util.FormsExtendConstants;
+import fr.paris.lutece.plugins.workflowcore.business.action.Action;
 import fr.paris.lutece.plugins.workflowcore.business.resource.ResourceHistory;
+import fr.paris.lutece.plugins.workflowcore.business.workflow.Workflow;
+import fr.paris.lutece.plugins.workflowcore.service.action.ActionService;
+import fr.paris.lutece.plugins.workflowcore.service.action.IActionService;
+import fr.paris.lutece.plugins.workflowcore.service.task.ITask;
 import fr.paris.lutece.portal.service.mail.MailService;
 import fr.paris.lutece.portal.service.template.AppTemplateService;
 import fr.paris.lutece.portal.service.util.AppLogService;
@@ -82,22 +89,37 @@ public class MassNotificationService implements IMassNotificationService
 {
     private static final String EMAIL_SENDING_LIMIT = "workflow-formsextend.task.mass.notification.email.sending.limit";
     private static final String DASHBOARD_SENDING_LIMIT = "workflow-formsextend.task.mass.notification.dashboard.sending.limit";
-
+    private static final String PROPERTY_ID_EMAIL_ATTRIBUTE = "workflow-formsextend.cacheuserattribute.attributeId.email";
+    
     @Inject
     @Named( ResourceExtenderHistoryService.BEAN_SERVICE )
     private IResourceExtenderHistoryService _resourceExtenderHistoryService;
 
+    @Inject
+    @Named( ActionService.BEAN_SERVICE )
+    private IActionService _actionService;
+    
     /**
      * {@inheritDoc}
      */
     @Override
-    public ReferenceList getAvailableMarkers( )
+    public ReferenceList getAvailableMarkers( ITask task  )
     {
         ReferenceList referenceList = new ReferenceList( );
-
-        List<Question> questionList = QuestionHome.getQuestionsList( ).stream( ).filter( distinctByKey( Question::getCode ) ).collect( Collectors.toList( ) );
-
-        questionList.stream( ).forEach( q -> referenceList.addItem( q.getCode( ), q.getTitle( ) ) );
+        
+        Action action = _actionService.findByPrimaryKey( task.getAction( ).getId( ) );      
+        Workflow workflow = action.getWorkflow( );
+                
+        for( Form form : FormHome.getFormList( ) )
+        {
+            if( form.getIdWorkflow( ) == workflow.getId( ) )
+            {
+                List<Question> questionList = QuestionHome.getListQuestionByIdForm( form.getId( ) ).stream( )
+                        .filter( distinctByKey( Question::getCode ) )
+                        .collect( Collectors.toList( ) );
+                questionList.stream( ).forEach( q -> referenceList.addItem( q.getCode( ), q.getTitle( ) ) );
+            }
+        }
 
         return referenceList;
     }
@@ -187,25 +209,31 @@ public class MassNotificationService implements IMassNotificationService
 
     }
 
-    @SuppressWarnings( "unchecked" )
+    /**
+     * Construct json for notify the API Rest Mydashboard notification
+     * @param config
+     * @param html
+     * @param resourceExtenderHistory
+     * @return json
+     */
     private JSONObject constructJsonNotification( MassNotificationTaskConfig config, HtmlTemplate html, ResourceExtenderHistory resourceExtenderHistory )
     {
-        JSONObject notificationJson = new JSONObject( );
+        Map<String, Object> map = new HashMap< >( );
+        
+        map.put( FormsExtendConstants.JSON_OBJECT, config.getSubjectForDashboard( ) );
+        map.put( FormsExtendConstants.JSON_SENDER, config.getSenderForDashboard( ) );
+        map.put( FormsExtendConstants.JSON_MESSAGE, html.getHtml( ) );
+        map.put( FormsExtendConstants.JSON_ID_USER, resourceExtenderHistory.getUserGuid( ) );
 
-        notificationJson.put( FormsExtendConstants.JSON_OBJECT, config.getSubjectForDashboard( ) );
-        notificationJson.put( FormsExtendConstants.JSON_SENDER, config.getSenderForDashboard( ) );
-        notificationJson.put( FormsExtendConstants.JSON_MESSAGE, html.getHtml( ) );
-        notificationJson.put( FormsExtendConstants.JSON_ID_USER, resourceExtenderHistory.getUserGuid( ) );
-
-        return notificationJson;
+        return new JSONObject( map );
     }
 
     /**
-     * TODO: Remplacer la liste des guid par les adresses emails
+     * Return user email list for resources to notify
      * 
      * @param resourceHistory
      * @param config
-     * @return
+     * @return email list
      */
     private List<String> getEmailList( ResourceHistory resourceHistory, MassNotificationTaskConfig config )
     {
@@ -217,15 +245,34 @@ public class MassNotificationService implements IMassNotificationService
 
         for ( List<ResourceExtenderHistory> listResourceExtenderHistoryPart : partitionedList )
         {
-            StringJoiner joiner = new StringJoiner( ";" );
+            List<String> listGuids = new ArrayList< >( );
 
             for ( ResourceExtenderHistory resourceExtenderHistory : listResourceExtenderHistoryPart )
             {
-                joiner.add( resourceExtenderHistory.getUserGuid( ) );
-            }
-            listEmail.add( joiner.toString( ) );
+                listGuids.add( resourceExtenderHistory.getUserGuid( ) );
+            }            
+            populateEmailListByUsersCachedAttribute( listEmail, listGuids );
+                   
         }
         return listEmail;
+    }
+    
+    /**
+     * Populate email list by users cached attribute
+     * @param listCachedAttributes
+     * @param listGuid
+     */
+    public static void populateEmailListByUsersCachedAttribute ( List<String> listEmail, List<String> listGuid )
+    {
+        Map<String, String> listCachedAttributes = new HashMap< >( );
+        int nIdEmailAttribute = AppPropertiesService.getPropertyInt( PROPERTY_ID_EMAIL_ATTRIBUTE, 1 );
+        
+        listCachedAttributes.putAll( CacheUserAttributeService.getCachedAttributesByListUserIdsAndAttributeId( listGuid, nIdEmailAttribute ) );
+        
+        for ( Map.Entry<String, String> cachedAttribute : listCachedAttributes.entrySet( ) )
+        {               
+            listEmail.add( cachedAttribute.getValue( ) );
+        }  
     }
 
     /**
