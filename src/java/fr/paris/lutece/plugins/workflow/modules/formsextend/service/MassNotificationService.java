@@ -166,21 +166,25 @@ public class MassNotificationService implements IMassNotificationService
     public void notifyUsersByEmail( ResourceHistory resourceHistory, MassNotificationTaskConfig config )
     {
         Map<String, Object> model = getAvailableMarkersValues( resourceHistory );
-        List<String> emailList = getEmailList( resourceHistory, config );
+        List<ResourceExtenderHistory> listResourceExtenderHistory = getResourceExtenderHistoryListForEmail( resourceHistory, config );
 
-        if ( !emailList.isEmpty( ) )
+        //Remove duplicated GUID
+        listResourceExtenderHistory = listResourceExtenderHistory.stream( )
+                .filter( distinctByKey( ResourceExtenderHistory::getUserGuid ) )
+                .collect( Collectors.toList( ) );
+        
+        List<List<ResourceExtenderHistory>> partitionedList = Lists.partition( listResourceExtenderHistory,
+                AppPropertiesService.getPropertyInt( EMAIL_SENDING_LIMIT, 100 ) );
+
+        for ( List<ResourceExtenderHistory> listResourceExtenderHistoryPart : partitionedList )
         {
-            for ( String email : emailList )
+            List<String> listGuids = new ArrayList< >( );
+
+            for ( ResourceExtenderHistory resourceExtenderHistory : listResourceExtenderHistoryPart )
             {
-                HtmlTemplate html = AppTemplateService.getTemplateFromStringFtl( StringUtils.EMPTY, config.getMessageForEmail( ), null, model, false );
-
-                MailService.sendMailHtml( StringUtils.EMPTY, StringUtils.EMPTY, email, config.getSenderNameForEmail( ), config.getSenderEmailForEmail( ),
-                        config.getSubjectForEmail( ), html.getHtml( ) );
-            }
-        }
-        else
-        {
-            AppLogService.error( "Email list is empty", new Exception( ) );
+                listGuids.add( resourceExtenderHistory.getUserGuid( ) );
+            }            
+            sendEmail( getEmailListByUsersCachedAttribute( listGuids ), config, model );
         }
     }
 
@@ -193,10 +197,17 @@ public class MassNotificationService implements IMassNotificationService
         List<JSONObject> listNotificationJson = new ArrayList<>( );
         Map<String, Object> model = getAvailableMarkersValues( resourceHistory );
 
-        List<List<ResourceExtenderHistory>> partitionedList = Lists.partition( getResourceExtenderHistoryListForDashboard( resourceHistory, config ),
+        List<ResourceExtenderHistory>  listResourceExtenderHistory = getResourceExtenderHistoryListForDashboard( resourceHistory, config );
+        
+        //Remove duplicated GUID
+        listResourceExtenderHistory = listResourceExtenderHistory.stream( )
+                .filter( distinctByKey( ResourceExtenderHistory::getUserGuid ) )
+                .collect( Collectors.toList( ) );
+        
+        List<List<ResourceExtenderHistory>> partitionedList = Lists.partition( listResourceExtenderHistory,
                 AppPropertiesService.getPropertyInt( DASHBOARD_SENDING_LIMIT, 100 ) );
 
-        HtmlTemplate html = AppTemplateService.getTemplateFromStringFtl( StringUtils.EMPTY, config.getMessageForDashboard( ), null, model, false );
+        HtmlTemplate html = AppTemplateService.getTemplateFromStringFtl( StringUtils.EMPTY, config.getMessageForDashboard( ), null, model, true );
 
         for ( List<ResourceExtenderHistory> listResourceExtenderHistoryPart : partitionedList )
         {
@@ -229,32 +240,24 @@ public class MassNotificationService implements IMassNotificationService
     }
 
     /**
-     * Return user email list for resources to notify
-     * 
-     * @param resourceHistory
+     * Send email
+     * @param strEmails
      * @param config
-     * @return email list
+     * @param model
      */
-    private List<String> getEmailList( ResourceHistory resourceHistory, MassNotificationTaskConfig config )
+    private void sendEmail ( String strEmails, MassNotificationTaskConfig config, Map<String,Object> model )
     {
-        List<String> listEmail = new ArrayList<>( );
-        List<ResourceExtenderHistory> listResourceExtenderHistory = getResourceExtenderHistoryListForEmail( resourceHistory, config );
-
-        List<List<ResourceExtenderHistory>> partitionedList = Lists.partition( listResourceExtenderHistory,
-                AppPropertiesService.getPropertyInt( EMAIL_SENDING_LIMIT, 100 ) );
-
-        for ( List<ResourceExtenderHistory> listResourceExtenderHistoryPart : partitionedList )
+        if ( !strEmails.isEmpty( ) )
         {
-            List<String> listGuids = new ArrayList< >( );
+            HtmlTemplate html = AppTemplateService.getTemplateFromStringFtl( StringUtils.EMPTY, config.getMessageForEmail( ), null, model, true );
 
-            for ( ResourceExtenderHistory resourceExtenderHistory : listResourceExtenderHistoryPart )
-            {
-                listGuids.add( resourceExtenderHistory.getUserGuid( ) );
-            }            
-            populateEmailListByUsersCachedAttribute( listEmail, listGuids );
-                   
+            MailService.sendMailHtml( StringUtils.EMPTY, StringUtils.EMPTY, strEmails, config.getSenderNameForEmail( ), config.getSenderEmailForEmail( ),
+                    config.getSubjectForEmail( ), html.getHtml( ) );
         }
-        return listEmail;
+        else
+        {
+            AppLogService.error( "Email list is empty", new Exception( ) );
+        }
     }
     
     /**
@@ -262,9 +265,10 @@ public class MassNotificationService implements IMassNotificationService
      * @param listCachedAttributes
      * @param listGuid
      */
-    public static void populateEmailListByUsersCachedAttribute ( List<String> listEmail, List<String> listGuid )
+    public static String getEmailListByUsersCachedAttribute ( List<String> listGuid )
     {
         Map<String, String> listCachedAttributes = new HashMap< >( );
+        List<String> listEmail = new ArrayList< >( );
         int nIdEmailAttribute = AppPropertiesService.getPropertyInt( PROPERTY_ID_EMAIL_ATTRIBUTE, 1 );
         
         listCachedAttributes.putAll( CacheUserAttributeService.getCachedAttributesByListUserIdsAndAttributeId( listGuid, nIdEmailAttribute ) );
@@ -272,7 +276,8 @@ public class MassNotificationService implements IMassNotificationService
         for ( Map.Entry<String, String> cachedAttribute : listCachedAttributes.entrySet( ) )
         {               
             listEmail.add( cachedAttribute.getValue( ) );
-        }  
+        }
+        return StringUtils.join( listEmail, ";");
     }
 
     /**
