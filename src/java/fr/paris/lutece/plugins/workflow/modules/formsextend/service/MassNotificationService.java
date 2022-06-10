@@ -69,9 +69,12 @@ import fr.paris.lutece.plugins.workflow.modules.formsextend.business.MassNotific
 import fr.paris.lutece.plugins.workflow.modules.formsextend.util.FormsExtendConstants;
 import fr.paris.lutece.plugins.workflowcore.business.action.Action;
 import fr.paris.lutece.plugins.workflowcore.business.resource.ResourceHistory;
+import fr.paris.lutece.plugins.workflowcore.business.resource.ResourceWorkflow;
 import fr.paris.lutece.plugins.workflowcore.business.workflow.Workflow;
 import fr.paris.lutece.plugins.workflowcore.service.action.ActionService;
 import fr.paris.lutece.plugins.workflowcore.service.action.IActionService;
+import fr.paris.lutece.plugins.workflowcore.service.resource.IResourceWorkflowService;
+import fr.paris.lutece.plugins.workflowcore.service.resource.ResourceWorkflowService;
 import fr.paris.lutece.plugins.workflowcore.service.task.ITask;
 import fr.paris.lutece.portal.service.mail.MailService;
 import fr.paris.lutece.portal.service.template.AppTemplateService;
@@ -98,6 +101,10 @@ public class MassNotificationService implements IMassNotificationService
     @Inject
     @Named( ActionService.BEAN_SERVICE )
     private IActionService _actionService;
+    
+    @Inject
+    @Named( ResourceWorkflowService.BEAN_SERVICE )
+    IResourceWorkflowService _resourceWorkflowService;
     
     /**
      * {@inheritDoc}
@@ -290,15 +297,17 @@ public class MassNotificationService implements IMassNotificationService
     private List<ResourceExtenderHistory> getResourceExtenderHistoryListForEmail( ResourceHistory resourceHistory, MassNotificationTaskConfig config )
     {
         List<ResourceExtenderHistory> listResourceExtenderHistory = new ArrayList<>( );
-
+        
         for ( String extenderType : config.getListExtenderTypesForEmail( ) )
         {
             ResourceExtenderHistoryFilter filter = new ResourceExtenderHistoryFilter( );
             filter.setExtenderType( extenderType );
             filter.setIdExtendableResource( String.valueOf( resourceHistory.getIdResource( ) ) );
-
+            filter.setExtendableResourceType( getResourceType( resourceHistory ) );
+            
             listResourceExtenderHistory.addAll( _resourceExtenderHistoryService.findByFilter( filter ) );
         }
+        
         return listResourceExtenderHistory;
     }
 
@@ -318,9 +327,23 @@ public class MassNotificationService implements IMassNotificationService
             ResourceExtenderHistoryFilter filter = new ResourceExtenderHistoryFilter( );
             filter.setExtenderType( extenderType );
             filter.setIdExtendableResource( String.valueOf( resourceHistory.getIdResource( ) ) );
-
+            filter.setExtendableResourceType( getResourceType( resourceHistory ) );
+            
             listResourceExtenderHistory.addAll( _resourceExtenderHistoryService.findByFilter( filter ) );
         }
         return listResourceExtenderHistory;
+    }
+    
+    /**
+     * Get resource type
+     * @param resourceHistory
+     * @return resource type
+     */
+    private String getResourceType( ResourceHistory resourceHistory )
+    {
+        ResourceWorkflow resourceWorkflow = _resourceWorkflowService.findByPrimaryKey( resourceHistory.getIdResource( ), resourceHistory.getResourceType( ),
+                resourceHistory.getWorkflow( ).getId( ) );
+        
+        return resourceWorkflow.getResourceType( ) + "_" + resourceWorkflow.getExternalParentId( );
     }
 }
