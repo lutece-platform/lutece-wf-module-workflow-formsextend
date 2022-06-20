@@ -49,6 +49,8 @@ import fr.paris.lutece.util.httpaccess.HttpAccessException;
 public class DashboardNotificationService
 {
     private static final String NOTIFICATION_API_ENDPOINT_ADDLIST = "workflow-formsextend.notification_api.endpoint.addList";
+    private static final String PROPERTY_REST_URL = "workflow-formsextend.notification_api.rest.webapp.url";
+    
 
     /**
      * Private constructor
@@ -85,7 +87,8 @@ public class DashboardNotificationService
     private static String doPostJson( String strRelativeUri, String strJson, HttpServletRequest request )
     {
         String strJsonResult = null;
-        String strUrl = AppPathService.getBaseUrl( request ) + strRelativeUri;
+        String strRestUrl = AppPropertiesService.getProperty( PROPERTY_REST_URL );
+        String strUrl = strRestUrl + strRelativeUri;
 
         try
         {
