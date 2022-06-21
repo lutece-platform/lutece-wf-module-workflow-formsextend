@@ -87,17 +87,15 @@ public class DashboardNotificationService
     private static String doPostJson( String strRelativeUri, String strJson, HttpServletRequest request )
     {
         String strJsonResult = null;
-        String strRestUrl = AppPropertiesService.getProperty( PROPERTY_REST_URL );
-        String strUrl = strRestUrl + strRelativeUri;
 
         try
         {
             HttpAccess httpAccess = new HttpAccess( );
-            strJsonResult = httpAccess.doPostJSON( strUrl, strJson, null, null, null, null );
+            strJsonResult = httpAccess.doPostJSON( AppPropertiesService.getProperty( PROPERTY_REST_URL ) + strRelativeUri, strJson, null, null, null, null );
         }
         catch( HttpAccessException e )
         {
-            String strError = "NotificationApiService - Error calling '" + strUrl;
+            String strError = "NotificationApiService - Error calling '" + AppPropertiesService.getProperty( PROPERTY_REST_URL ) + strRelativeUri;
             AppLogService.error( strError, e );
         }
 
