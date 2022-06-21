@@ -214,6 +214,7 @@ public class MassNotificationService implements IMassNotificationService
         List<List<ResourceExtenderHistory>> partitionedList = Lists.partition( listResourceExtenderHistory,
                 AppPropertiesService.getPropertyInt( DASHBOARD_SENDING_LIMIT, 100 ) );
 
+        config.setSubjectForDashboard( AppTemplateService.getTemplateFromStringFtl( StringUtils.EMPTY, config.getSubjectForDashboard( ), null, model, true ).getHtml( ) );
         HtmlTemplate html = AppTemplateService.getTemplateFromStringFtl( StringUtils.EMPTY, config.getMessageForDashboard( ), null, model, true );
 
         for ( List<ResourceExtenderHistory> listResourceExtenderHistoryPart : partitionedList )
@@ -259,7 +260,7 @@ public class MassNotificationService implements IMassNotificationService
             HtmlTemplate html = AppTemplateService.getTemplateFromStringFtl( StringUtils.EMPTY, config.getMessageForEmail( ), null, model, true );
 
             MailService.sendMailHtml( StringUtils.EMPTY, StringUtils.EMPTY, strEmails, config.getSenderNameForEmail( ), config.getSenderEmailForEmail( ),
-                    config.getSubjectForEmail( ), html.getHtml( ) );
+            		AppTemplateService.getTemplateFromStringFtl( StringUtils.EMPTY, config.getSubjectForEmail( ), null, model, true ).getHtml( ), html.getHtml( ) );
         }
         else
         {
