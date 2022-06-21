@@ -36,7 +36,6 @@ package fr.paris.lutece.plugins.workflow.modules.formsextend.service;
 import javax.servlet.http.HttpServletRequest;
 
 import fr.paris.lutece.portal.service.util.AppLogService;
-import fr.paris.lutece.portal.service.util.AppPathService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.util.httpaccess.HttpAccess;
 import fr.paris.lutece.util.httpaccess.HttpAccessException;
