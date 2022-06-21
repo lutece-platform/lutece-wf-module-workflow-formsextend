@@ -214,14 +214,13 @@ public class MassNotificationService implements IMassNotificationService
         List<List<ResourceExtenderHistory>> partitionedList = Lists.partition( listResourceExtenderHistory,
                 AppPropertiesService.getPropertyInt( DASHBOARD_SENDING_LIMIT, 100 ) );
 
-        config.setSubjectForDashboard( AppTemplateService.getTemplateFromStringFtl( StringUtils.EMPTY, config.getSubjectForDashboard( ), null, model, true ).getHtml( ) );
-        HtmlTemplate html = AppTemplateService.getTemplateFromStringFtl( StringUtils.EMPTY, config.getMessageForDashboard( ), null, model, true );
+        HtmlTemplate html = AppTemplateService.getTemplateFromStringFtl( config.getMessageForDashboard( ), null, model );
 
         for ( List<ResourceExtenderHistory> listResourceExtenderHistoryPart : partitionedList )
         {
             for ( ResourceExtenderHistory resourceExtenderHistory : listResourceExtenderHistoryPart )
             {
-                listNotificationJson.add( constructJsonNotification( config, html, resourceExtenderHistory ) );
+                listNotificationJson.add( constructJsonNotification( config, html, resourceExtenderHistory, model ) );
             }
             DashboardNotificationService.sendMassNotification( listNotificationJson.toString( ), request );
         }
@@ -233,13 +232,14 @@ public class MassNotificationService implements IMassNotificationService
      * @param config
      * @param html
      * @param resourceExtenderHistory
+     * @param model 
      * @return json
      */
-    private JSONObject constructJsonNotification( MassNotificationTaskConfig config, HtmlTemplate html, ResourceExtenderHistory resourceExtenderHistory )
+    private JSONObject constructJsonNotification( MassNotificationTaskConfig config, HtmlTemplate html, ResourceExtenderHistory resourceExtenderHistory, Map<String, Object> model )
     {
         Map<String, Object> map = new HashMap< >( );
         
-        map.put( FormsExtendConstants.JSON_OBJECT, config.getSubjectForDashboard( ) );
+        map.put( FormsExtendConstants.JSON_OBJECT, AppTemplateService.getTemplateFromStringFtl( config.getSubjectForDashboard( ), null, model ).getHtml( ) );
         map.put( FormsExtendConstants.JSON_SENDER, config.getSenderForDashboard( ) );
         map.put( FormsExtendConstants.JSON_MESSAGE, html.getHtml( ) );
         map.put( FormsExtendConstants.JSON_ID_USER, resourceExtenderHistory.getUserGuid( ) );
@@ -257,10 +257,10 @@ public class MassNotificationService implements IMassNotificationService
     {
         if ( !strEmails.isEmpty( ) )
         {
-            HtmlTemplate html = AppTemplateService.getTemplateFromStringFtl( StringUtils.EMPTY, config.getMessageForEmail( ), null, model, true );
+            HtmlTemplate html = AppTemplateService.getTemplateFromStringFtl( config.getMessageForEmail( ), null, model );
 
             MailService.sendMailHtml( StringUtils.EMPTY, StringUtils.EMPTY, strEmails, config.getSenderNameForEmail( ), config.getSenderEmailForEmail( ),
-            		AppTemplateService.getTemplateFromStringFtl( StringUtils.EMPTY, config.getSubjectForEmail( ), null, model, true ).getHtml( ), html.getHtml( ) );
+            		AppTemplateService.getTemplateFromStringFtl( config.getSubjectForEmail( ), null, model ).getHtml( ), html.getHtml( ) );
         }
         else
         {
