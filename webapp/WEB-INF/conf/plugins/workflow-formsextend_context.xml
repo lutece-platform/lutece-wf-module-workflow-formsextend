@@ -13,6 +13,8 @@
     <!-- DAO -->
     <bean id="workflow-formsextend.taskMassNotificationConfigDAO"
         class="fr.paris.lutece.plugins.workflow.modules.formsextend.business.MassNotificationTaskConfigDAO" />
+    <bean id="workflow-formsextend.massNotificationHistoryDAO"
+        class="fr.paris.lutece.plugins.workflow.modules.formsextend.business.MassNotificationHistoryDAO" />
 
     <!-- Services -->
     <bean id="workflow-formsextend.taskMassNotificationConfigService"
@@ -20,6 +22,8 @@
         p:taskConfigDAO-ref="workflow-formsextend.taskMassNotificationConfigDAO" />
     <bean id="workflow-formsextend.massNotificationService"
         class="fr.paris.lutece.plugins.workflow.modules.formsextend.service.MassNotificationService" />
+    <bean id="workflow-formsextend.massNotificationHistoryService"
+        class="fr.paris.lutece.plugins.workflow.modules.formsextend.service.MassNotificationHistoryService" />
         
     <!-- Task -->
     <bean id="workflow-formsextend.taskMassNotification"

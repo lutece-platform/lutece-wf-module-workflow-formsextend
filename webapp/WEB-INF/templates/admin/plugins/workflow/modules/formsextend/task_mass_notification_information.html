@@ -1,0 +1,11 @@
+<#if information_history?exists>
+	<@div>
+		<span>#i18n{module.workflow.formsextend.task_mass_notification_history.label_information}</span>
+		<#if information_history.emailNotification>
+			<@button color='primary' size='xs' title='#i18n{module.workflow.formsextend.task_mass_notification_history.label_email}' />
+		</#if>
+		<#if information_history.dashboardNotification>
+			<@button color='primary' size='xs' title='#i18n{module.workflow.formsextend.task_mass_notification_history.label_dashboard}' />
+		</#if>
+	</@div>
+</#if>
