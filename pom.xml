@@ -80,8 +80,8 @@
         <jiraComponentId></jiraComponentId>
     </properties>
     <scm>
-        <connection>scm:https://github.com/lutece-platform/lutece-wf-module-workflow-formsextend.git</connection>
-        <developerConnection>scm:https://github.com/lutece-platform/lutece-wf-module-workflow-formsextend.git</developerConnection>
+        <connection>scm:git:https://github.com/lutece-platform/lutece-wf-module-workflow-formsextend.git</connection>
+        <developerConnection>scm:git:https://github.com/lutece-platform/lutece-wf-module-workflow-formsextend.git</developerConnection>
         <url>https:https://github.com/lutece-platform/lutece-wf-module-workflow-formsextend.git</url>
         <tag>HEAD</tag>
     </scm>
