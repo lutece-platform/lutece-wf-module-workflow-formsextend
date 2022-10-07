@@ -53,5 +53,17 @@ public final class FormsExtendConstants
     public static final String JSON_SENDER = "sender";
     public static final String JSON_MESSAGE = "message";
     public static final String JSON_ID_USER = "idUser";
+    
+    //PROPERTIES
+    public static final String PROPERTY_LABEL_URL_RESPONSE_FO = "module.workflow.formsextend.task_mass_notification_email.config.marker.url_response_fo";
+    public static final String PROPERTY_LABEL_URL_RESPONSE_BO = "module.workflow.formsextend.task_mass_notification_email.config.marker.url_response_bo";
+    public static final String PROPERTY_URL_RESPONSE_FO = "workflow-formsextend.formResponse.url.fo";
+    public static final String PROPERTY_URL_RESPONSE_BO = "workflow-formsextend.formResponse.url.bo";
+    public static final String PROPERTY_LUTECE_PROD_URL = "lutece.prod.url";
+    public static final String PROPERTY_LUTECE_ADMIN_PROD_URL = "lutece.admin.prod.url"; 
+    
+    //MARKS
+    public static final String MARK_URL_RESPONSE_FO = "url_response_fo";
+    public static final String MARK_URL_RESPONSE_BO = "url_response_bo";
 
 }

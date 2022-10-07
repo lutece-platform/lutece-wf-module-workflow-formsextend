@@ -76,6 +76,7 @@ import fr.paris.lutece.plugins.workflowcore.service.action.IActionService;
 import fr.paris.lutece.plugins.workflowcore.service.resource.IResourceWorkflowService;
 import fr.paris.lutece.plugins.workflowcore.service.resource.ResourceWorkflowService;
 import fr.paris.lutece.plugins.workflowcore.service.task.ITask;
+import fr.paris.lutece.portal.service.i18n.I18nService;
 import fr.paris.lutece.portal.service.mail.MailService;
 import fr.paris.lutece.portal.service.template.AppTemplateService;
 import fr.paris.lutece.portal.service.util.AppLogService;
@@ -127,7 +128,9 @@ public class MassNotificationService implements IMassNotificationService
                 questionList.stream( ).forEach( q -> referenceList.addItem( q.getCode( ), q.getTitle( ) ) );
             }
         }
-
+        referenceList.addItem( FormsExtendConstants.MARK_URL_RESPONSE_FO, I18nService.getLocalizedString( FormsExtendConstants.PROPERTY_LABEL_URL_RESPONSE_FO, I18nService.getDefaultLocale( ) ) );
+        referenceList.addItem( FormsExtendConstants.MARK_URL_RESPONSE_BO, I18nService.getLocalizedString( FormsExtendConstants.PROPERTY_LABEL_URL_RESPONSE_BO, I18nService.getDefaultLocale( ) ) );
+        
         return referenceList;
     }
 
@@ -163,6 +166,12 @@ public class MassNotificationService implements IMassNotificationService
                 }
             }
         }
+        
+        model.put( FormsExtendConstants.MARK_URL_RESPONSE_FO, AppPropertiesService.getProperty( FormsExtendConstants.PROPERTY_LUTECE_PROD_URL ) 
+                + AppPropertiesService.getProperty( FormsExtendConstants.PROPERTY_URL_RESPONSE_FO ) + formResponse.getId( ) );
+        model.put( FormsExtendConstants.MARK_URL_RESPONSE_BO, AppPropertiesService.getProperty( FormsExtendConstants.PROPERTY_LUTECE_PROD_URL ) 
+                + AppPropertiesService.getProperty( FormsExtendConstants.PROPERTY_URL_RESPONSE_BO ) + formResponse.getId( ) );
+        
         return model;
     }
 
