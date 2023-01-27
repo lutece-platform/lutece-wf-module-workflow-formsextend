@@ -36,6 +36,7 @@ package fr.paris.lutece.plugins.workflow.modules.formsextend.service;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -76,9 +77,11 @@ import fr.paris.lutece.plugins.workflowcore.service.action.IActionService;
 import fr.paris.lutece.plugins.workflowcore.service.resource.IResourceWorkflowService;
 import fr.paris.lutece.plugins.workflowcore.service.resource.ResourceWorkflowService;
 import fr.paris.lutece.plugins.workflowcore.service.task.ITask;
+import fr.paris.lutece.portal.service.i18n.I18nService;
 import fr.paris.lutece.portal.service.mail.MailService;
 import fr.paris.lutece.portal.service.template.AppTemplateService;
 import fr.paris.lutece.portal.service.util.AppLogService;
+import fr.paris.lutece.portal.service.util.AppPathService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.util.ReferenceList;
 import fr.paris.lutece.util.html.HtmlTemplate;
@@ -93,6 +96,10 @@ public class MassNotificationService implements IMassNotificationService
     private static final String EMAIL_SENDING_LIMIT = "workflow-formsextend.task.mass.notification.email.sending.limit";
     private static final String DASHBOARD_SENDING_LIMIT = "workflow-formsextend.task.mass.notification.dashboard.sending.limit";
     private static final String PROPERTY_ID_EMAIL_ATTRIBUTE = "workflow-formsextend.cacheuserattribute.attributeId.email";
+    private static final String PROPERTY_FORM_RESPONSE_ID = "module.workflow.formsextend.marker.formResponse.id";
+    private static final String PROPERTY_BASE_URL = "module.workflow.formsextend.marker.base_url";
+    private static final String MARK_FORM_RESPONSE_ID = "formResponseID";
+    private static final String MARK_BASE_URL = "base_url";
     
     @Inject
     @Named( ResourceExtenderHistoryService.BEAN_SERVICE )
@@ -110,9 +117,12 @@ public class MassNotificationService implements IMassNotificationService
      * {@inheritDoc}
      */
     @Override
-    public ReferenceList getAvailableMarkers( ITask task  )
+    public ReferenceList getAvailableMarkers( ITask task, Locale locale  )
     {
         ReferenceList referenceList = new ReferenceList( );
+
+        referenceList.addItem( MARK_FORM_RESPONSE_ID, I18nService.getLocalizedString( PROPERTY_FORM_RESPONSE_ID, locale ) );
+        referenceList.addItem( MARK_BASE_URL, I18nService.getLocalizedString( PROPERTY_BASE_URL, locale ) );
         
         Action action = _actionService.findByPrimaryKey( task.getAction( ).getId( ) );      
         Workflow workflow = action.getWorkflow( );
@@ -152,6 +162,9 @@ public class MassNotificationService implements IMassNotificationService
     {
         Map<String, Object> model = new HashMap<>( );
         FormResponse formResponse = FormResponseHome.findByPrimaryKey( resourceHistory.getIdResource( ) );
+        
+        model.put( MARK_FORM_RESPONSE_ID, formResponse.getId( ) );
+        model.put( MARK_BASE_URL, AppPathService.getProdUrl( (HttpServletRequest) null ) );
 
         for ( FormResponseStep formResponseStep : formResponse.getSteps( ) )
         {

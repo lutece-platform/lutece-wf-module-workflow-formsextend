@@ -33,6 +33,7 @@
  */
 package fr.paris.lutece.plugins.workflow.modules.formsextend.service;
 
+import java.util.Locale;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -54,7 +55,7 @@ public interface IMassNotificationService
      * @param task
      * @return reference list of available markers
      */
-    ReferenceList getAvailableMarkers( ITask task );
+    ReferenceList getAvailableMarkers( ITask task, Locale locale );
 
     /**
      * Get available markers values
