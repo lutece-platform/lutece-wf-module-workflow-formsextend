@@ -69,7 +69,6 @@ import fr.paris.lutece.plugins.workflow.modules.formsextend.business.MassNotific
 import fr.paris.lutece.plugins.workflow.modules.formsextend.util.FormsExtendConstants;
 import fr.paris.lutece.plugins.workflowcore.business.action.Action;
 import fr.paris.lutece.plugins.workflowcore.business.resource.ResourceHistory;
-import fr.paris.lutece.plugins.workflowcore.business.resource.ResourceWorkflow;
 import fr.paris.lutece.plugins.workflowcore.business.workflow.Workflow;
 import fr.paris.lutece.plugins.workflowcore.service.action.ActionService;
 import fr.paris.lutece.plugins.workflowcore.service.action.IActionService;
@@ -148,18 +147,20 @@ public class MassNotificationService implements IMassNotificationService
      * {@inheritDoc}
      */
     @Override
-    public Map<String, Object> getAvailableMarkersValues( ResourceHistory resourceHistory )
+    public Map<String, Object> getAvailableMarkersValues( FormResponse formResponse )
     {
         Map<String, Object> model = new HashMap<>( );
-        FormResponse formResponse = FormResponseHome.findByPrimaryKey( resourceHistory.getIdResource( ) );
 
-        for ( FormResponseStep formResponseStep : formResponse.getSteps( ) )
+        if ( formResponse != null )
         {
-            for ( FormQuestionResponse formQuestionResponse : formResponseStep.getQuestions( ) )
+            for ( FormResponseStep formResponseStep : formResponse.getSteps( ) )
             {
-                for ( Response response : formQuestionResponse.getEntryResponse( ) )
+                for ( FormQuestionResponse formQuestionResponse : formResponseStep.getQuestions( ) )
                 {
-                    model.put( formQuestionResponse.getQuestion( ).getCode( ), response.getResponseValue( ) );
+                    for ( Response response : formQuestionResponse.getEntryResponse( ) )
+                    {
+                        model.put( formQuestionResponse.getQuestion( ).getCode( ), response.getResponseValue( ) );
+                    }
                 }
             }
         }
@@ -172,8 +173,9 @@ public class MassNotificationService implements IMassNotificationService
     @Override
     public void notifyUsersByEmail( ResourceHistory resourceHistory, MassNotificationTaskConfig config )
     {
-        Map<String, Object> model = getAvailableMarkersValues( resourceHistory );
-        List<ResourceExtenderHistory> listResourceExtenderHistory = getResourceExtenderHistoryListForEmail( resourceHistory, config );
+        FormResponse formResponse = FormResponseHome.findByPrimaryKey( resourceHistory.getIdResource( ) );
+        Map<String, Object> model = getAvailableMarkersValues( formResponse );
+        List<ResourceExtenderHistory> listResourceExtenderHistory = getResourceExtenderHistoryListForEmail( resourceHistory, config, formResponse.getFormId( ) );
 
         //Remove duplicated GUID
         listResourceExtenderHistory = listResourceExtenderHistory.stream( )
@@ -202,9 +204,11 @@ public class MassNotificationService implements IMassNotificationService
     public void notifyUsersDashboard( ResourceHistory resourceHistory, MassNotificationTaskConfig config, HttpServletRequest request )
     {
         List<JSONObject> listNotificationJson = new ArrayList<>( );
-        Map<String, Object> model = getAvailableMarkersValues( resourceHistory );
+        
+        FormResponse formResponse = FormResponseHome.findByPrimaryKey( resourceHistory.getIdResource( ) );
+        Map<String, Object> model = getAvailableMarkersValues( formResponse );
 
-        List<ResourceExtenderHistory>  listResourceExtenderHistory = getResourceExtenderHistoryListForDashboard( resourceHistory, config );
+        List<ResourceExtenderHistory>  listResourceExtenderHistory = getResourceExtenderHistoryListForDashboard( resourceHistory, config, formResponse.getFormId( ) );
         
         //Remove duplicated GUID
         listResourceExtenderHistory = listResourceExtenderHistory.stream( )
@@ -293,9 +297,10 @@ public class MassNotificationService implements IMassNotificationService
      * 
      * @param resourceHistory
      * @param config
+     * @param nIdForm
      * @return list resource extender history filtered
      */
-    private List<ResourceExtenderHistory> getResourceExtenderHistoryListForEmail( ResourceHistory resourceHistory, MassNotificationTaskConfig config )
+    private List<ResourceExtenderHistory> getResourceExtenderHistoryListForEmail( ResourceHistory resourceHistory, MassNotificationTaskConfig config, int nIdForm )
     {
         List<ResourceExtenderHistory> listResourceExtenderHistory = new ArrayList<>( );
         
@@ -304,7 +309,7 @@ public class MassNotificationService implements IMassNotificationService
             ResourceExtenderHistoryFilter filter = new ResourceExtenderHistoryFilter( );
             filter.setExtenderType( extenderType );
             filter.setIdExtendableResource( String.valueOf( resourceHistory.getIdResource( ) ) );
-            filter.setExtendableResourceType( getResourceType( resourceHistory ) );
+            filter.setExtendableResourceType( getResourceType( resourceHistory.getResourceType( ), nIdForm ) );
             
             listResourceExtenderHistory.addAll( _resourceExtenderHistoryService.findByFilter( filter ) );
         }
@@ -317,9 +322,10 @@ public class MassNotificationService implements IMassNotificationService
      * 
      * @param resourceHistory
      * @param config
+     * @param nIdForm
      * @return list resource extender history filtered
      */
-    private List<ResourceExtenderHistory> getResourceExtenderHistoryListForDashboard( ResourceHistory resourceHistory, MassNotificationTaskConfig config )
+    private List<ResourceExtenderHistory> getResourceExtenderHistoryListForDashboard( ResourceHistory resourceHistory, MassNotificationTaskConfig config, int nIdForm )
     {
         List<ResourceExtenderHistory> listResourceExtenderHistory = new ArrayList<>( );
 
@@ -328,7 +334,7 @@ public class MassNotificationService implements IMassNotificationService
             ResourceExtenderHistoryFilter filter = new ResourceExtenderHistoryFilter( );
             filter.setExtenderType( extenderType );
             filter.setIdExtendableResource( String.valueOf( resourceHistory.getIdResource( ) ) );
-            filter.setExtendableResourceType( getResourceType( resourceHistory ) );
+            filter.setExtendableResourceType( getResourceType( resourceHistory.getResourceType( ), nIdForm ) );
             
             listResourceExtenderHistory.addAll( _resourceExtenderHistoryService.findByFilter( filter ) );
         }
@@ -337,14 +343,12 @@ public class MassNotificationService implements IMassNotificationService
     
     /**
      * Get resource type
-     * @param resourceHistory
+     * @param strResourceType
+     * @param nIdForm
      * @return resource type
      */
-    private String getResourceType( ResourceHistory resourceHistory )
-    {
-        ResourceWorkflow resourceWorkflow = _resourceWorkflowService.findByPrimaryKey( resourceHistory.getIdResource( ), resourceHistory.getResourceType( ),
-                resourceHistory.getWorkflow( ).getId( ) );
-        
-        return resourceWorkflow.getResourceType( ) + "_" + resourceWorkflow.getExternalParentId( );
+    private String getResourceType( String strResourceType, int nIdForm )
+    {        
+        return strResourceType + "_" + nIdForm;
     }
 }
