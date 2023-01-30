@@ -37,6 +37,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import fr.paris.lutece.plugins.forms.business.FormResponse;
 import fr.paris.lutece.plugins.workflow.modules.formsextend.business.MassNotificationTaskConfig;
 import fr.paris.lutece.plugins.workflowcore.business.resource.ResourceHistory;
 import fr.paris.lutece.plugins.workflowcore.service.task.ITask;
@@ -59,9 +60,9 @@ public interface IMassNotificationService
     /**
      * Get available markers values
      * 
-     * @param resourceHistory
+     * @param formResponse
      */
-    Map<String, Object> getAvailableMarkersValues( ResourceHistory resourceHistory );
+    Map<String, Object> getAvailableMarkersValues( FormResponse formResponse );
 
     /**
      * Notify users by email
