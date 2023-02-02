@@ -36,6 +36,7 @@ package fr.paris.lutece.plugins.workflow.modules.formsextend.service;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -63,6 +64,7 @@ import fr.paris.lutece.plugins.forms.business.FormResponseHome;
 import fr.paris.lutece.plugins.forms.business.FormResponseStep;
 import fr.paris.lutece.plugins.forms.business.Question;
 import fr.paris.lutece.plugins.forms.business.QuestionHome;
+import fr.paris.lutece.plugins.forms.util.FormsResponseUtils;
 import fr.paris.lutece.plugins.genericattributes.business.Response;
 import fr.paris.lutece.plugins.mylutece.modules.cacheuserattribute.service.CacheUserAttributeService;
 import fr.paris.lutece.plugins.workflow.modules.formsextend.business.MassNotificationTaskConfig;
@@ -75,9 +77,11 @@ import fr.paris.lutece.plugins.workflowcore.service.action.IActionService;
 import fr.paris.lutece.plugins.workflowcore.service.resource.IResourceWorkflowService;
 import fr.paris.lutece.plugins.workflowcore.service.resource.ResourceWorkflowService;
 import fr.paris.lutece.plugins.workflowcore.service.task.ITask;
+import fr.paris.lutece.portal.service.i18n.I18nService;
 import fr.paris.lutece.portal.service.mail.MailService;
 import fr.paris.lutece.portal.service.template.AppTemplateService;
 import fr.paris.lutece.portal.service.util.AppLogService;
+import fr.paris.lutece.portal.service.util.AppPathService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.util.ReferenceList;
 import fr.paris.lutece.util.html.HtmlTemplate;
@@ -92,6 +96,8 @@ public class MassNotificationService implements IMassNotificationService
     private static final String EMAIL_SENDING_LIMIT = "workflow-formsextend.task.mass.notification.email.sending.limit";
     private static final String DASHBOARD_SENDING_LIMIT = "workflow-formsextend.task.mass.notification.dashboard.sending.limit";
     private static final String PROPERTY_ID_EMAIL_ATTRIBUTE = "workflow-formsextend.cacheuserattribute.attributeId.email";
+    private static final String PROPERTY_FORMS_RESPONSE_URL_FO = "module.workflow.formsextend.marker.forms_response_url_fo";
+    private static final String MARK_RESPONSE_URL = "view_response_url";
     
     @Inject
     @Named( ResourceExtenderHistoryService.BEAN_SERVICE )
@@ -109,9 +115,11 @@ public class MassNotificationService implements IMassNotificationService
      * {@inheritDoc}
      */
     @Override
-    public ReferenceList getAvailableMarkers( ITask task  )
+    public ReferenceList getAvailableMarkers( ITask task, Locale locale  )
     {
         ReferenceList referenceList = new ReferenceList( );
+
+        referenceList.addItem( MARK_RESPONSE_URL, I18nService.getLocalizedString( PROPERTY_FORMS_RESPONSE_URL_FO, locale ) );
         
         Action action = _actionService.findByPrimaryKey( task.getAction( ).getId( ) );      
         Workflow workflow = action.getWorkflow( );
@@ -150,6 +158,8 @@ public class MassNotificationService implements IMassNotificationService
     public Map<String, Object> getAvailableMarkersValues( FormResponse formResponse )
     {
         Map<String, Object> model = new HashMap<>( );
+        
+        model.put( MARK_RESPONSE_URL, FormsResponseUtils.buildFormsResponseFOUrl(formResponse.getId( )) );
 
         if ( formResponse != null )
         {

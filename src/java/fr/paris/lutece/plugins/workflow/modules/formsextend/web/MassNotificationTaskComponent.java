@@ -85,7 +85,7 @@ public class MassNotificationTaskComponent extends NoFormTaskComponent
 
         model.put( MARK_CONFIG, _config.findByPrimaryKey( task.getId( ) ) );
         model.put( MARK_EXTENDER_TYPES, _resourceExtenderService.getExtenderTypes( locale ) );
-        model.put( MARK_EMAIL_MARKERS, _massNotificationService.getAvailableMarkers( task ) );
+        model.put( MARK_EMAIL_MARKERS, _massNotificationService.getAvailableMarkers( task, locale ) );
 
         HtmlTemplate html = AppTemplateService.getTemplate( TEMPLATE_CONFIG, locale, model );
 
