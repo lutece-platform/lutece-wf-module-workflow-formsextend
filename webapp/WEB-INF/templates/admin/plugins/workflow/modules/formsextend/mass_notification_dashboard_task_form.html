@@ -2,16 +2,16 @@
 <#if config?? && config.emailConfig?? && config.dashboardConfig?c == 'true'>
 	<#assign checkedDashboardConfig=true />
 </#if>
-<@formGroup labelKey='#i18n{module.workflow.formsextend.task_mass_notification_dashboard.config.labelQuestion}' >
-	<@checkBox name='isDashbordConfigCheck' id='isDashbordConfigCheck'  value='${(config.dashboardConfig?c)!}' checked=checkedDashboardConfig />
+<@formGroup labelKey='#i18n{module.workflow.formsextend.task_mass_notification_dashboard.config.labelQuestion}' hideLabel=['all'] >
+	<@checkBox name='isDashbordConfigCheck' id='isDashbordConfigCheck' labelKey='#i18n{module.workflow.formsextend.task_mass_notification_dashboard.config.labelQuestion}' value='${(config.dashboardConfig?c)!}' checked=checkedDashboardConfig />
 	<@input type='hidden' name='dashboardConfig' id='dashbordConfig'  value='${(config.dashboardConfig?c)!}' />
 </@formGroup>
 <@div id='contentDashboardConfig'>
 	<@formGroup labelKey='#i18n{module.workflow.formsextend.task_mass_notification_dashboard.config.labelSubject}' helpKey='#i18n{module.workflow.formsextend.task_mass_notification_dashboard.config.labelSubjectHelp}' mandatory=true>
-		<@input type='text' id="subjectForDashboard" name='subjectForDashboard' value='${(config.subjectForDashboard)!}' mandatory=true></@input>
+		<@input type='text' id="subjectForDashboard" name='subjectForDashboard' value='${(config.subjectForDashboard)!}' ></@input>
 	</@formGroup>
 	<@formGroup labelKey='#i18n{module.workflow.formsextend.task_mass_notification_dashboard.config.labelSender}' helpKey='#i18n{module.workflow.formsextend.task_mass_notification_dashboard.config.labelSenderHelp}' max=255 mandatory=true>
-		<@input type='text' id="senderForDashboard" name='senderForDashboard' value='${(config.senderForDashboard)!}' mandatory=true></@input>
+		<@input type='text' id="senderForDashboard" name='senderForDashboard' value='${(config.senderForDashboard)!}' ></@input>
 	</@formGroup>
 	<@formGroup labelKey='#i18n{module.workflow.formsextend.task_mass_notification_dashboard.config.labelExtenderTypes}' helpKey='#i18n{module.workflow.formsextend.task_mass_notification_dashboard.config.labelExtenderTypesHelp}'>
 		<#if extenderTypes?? && extenderTypes?has_content>
@@ -28,7 +28,7 @@
 		</#list>
 		</#if>
 	</@formGroup>
-	<@formGroup labelKey='#i18n{module.workflow.formsextend.task_mass_notification_dashboard.config.labelMessage}' helpKey='#i18n{module.workflow.formsextend.task_mass_notification_dashboard.config.labelMessageHelp}' mandatory=true>
-		<@input type='textarea' id="messageForDashboard" name='messageForDashboard' value='${(config.messageForDashboard)!}' rows=6 cols=100 richtext=true mandatory=true >${(config.messageForDashboard)!}</@input>
+	<@formGroup labelKey='#i18n{module.workflow.formsextend.task_mass_notification_dashboard.config.labelMessage}' helpKey='#i18n{module.workflow.formsextend.task_mass_notification_dashboard.config.labelMessageHelp}' mandatory=true htmlRequired=false >
+		<@input type='textarea' id="messageForDashboard" name='messageForDashboard' value='${(config.messageForDashboard)!}' rows=6 cols=100 richtext=true >${(config.messageForDashboard)!}</@input>
 	</@formGroup>
 </@div>

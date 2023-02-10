@@ -9,7 +9,7 @@
 						<@tabLink id='tab-dashboard' href='#pane-dashboard' title='#i18n{module.workflow.formsextend.task_mass_notification.dashboardLabel}' />
 				</@tabList>
 				<@tabContent>
-						<@tabPanel id='pane-email'>
+						<@tabPanel id='pane-email' active=true>
 							<#include "mass_notification_email_task_form.html" />
 						</@tabPanel>
 						<@tabPanel id='pane-dashboard'>
@@ -29,9 +29,7 @@
 				<#if email_markers?exists>
 					<#list email_markers as marker>
 						<tr>
-							<@td class='marker'>
-								${marker.name!''}
-							</@td>
+							<@td class='marker'>${marker.name!''}</@td>
 							<@td class='marker'>&#36;&#123;${marker.code}&#33;&#125;</@td>
 							<@td><@icon style='copy' title='Copy line' /></@td>
 						</tr>
@@ -42,13 +40,21 @@
 	</@row>
 </fieldset>
 <@initEditor/>
-
 <style>
-	.marker:hover, .fa-copy:hover{ cursor: pointer; opacity: .8}
-	.marker:nth-child(even) td{ background: #777; color: #fff }
+.marker:hover, .fa-copy:hover{ cursor: pointer; opacity: .8}
+.marker:nth-child(even) td{ background: #777; color: #fff }
 </style>
 <script>
-$(document).ready(function(){
+$( function(){
+	tinymce.activeEditor.on('submit', function (e) {
+      if (!tinymce.activeEditor.getContent({ format: 'text' }).trim().length) {
+        e.preventDefault();
+		const tArea = '#' + tinymce.activeEditor.id + ' + .form-text';
+		$( tArea ).addClass('text-danger').removeClass('text-muted');
+		$( tArea ).html('Champ obligatoire');
+      }
+	});
+
 	$('.marker').on( 'dblclick', function(e){
 		if( $( '.tab-pane.active .richtext' ).length > 0 ){
 			var c = '<p>' + $(this).text() + '</p>';
@@ -148,7 +154,7 @@ $(document).ready(function(){
 		$('#subjectForEmail').prop('required', value );
 		$('#senderNameForEmail').prop('required', value );
 		$('#senderEmailForEmail').prop('required', value );
-		$('#messageForEmail').prop('required', value );
+		// $('#messageForEmail').prop('required', value );
 	}
 
 	//Enabling and disabling required fields for dashboard notificaiton
@@ -156,7 +162,7 @@ $(document).ready(function(){
 		$('#dashbordConfig').val(value);
 		$('#subjectForDashboard').prop('required', value );
 		$('#senderForDashboard').prop('required', value );
-		$('#messageForDashboard').prop('required', value );
+		// $('#messageForDashboard').prop('required', value );
 	}
 	
 	function copyToClipboard( txt ) {
