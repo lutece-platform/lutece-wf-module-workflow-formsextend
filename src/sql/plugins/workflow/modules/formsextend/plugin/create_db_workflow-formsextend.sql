@@ -17,3 +17,18 @@ CREATE TABLE task_forms_extend_mass_notification_cf(
   is_dashboard_config SMALLINT DEFAULT 0 NOT NULL,
   PRIMARY KEY (id_task)
 );
+
+
+--
+-- Table structure for table task_forms_extend_mass_notification_history
+--
+DROP TABLE IF EXISTS task_forms_extend_mass_notification_history;
+CREATE TABLE task_forms_extend_mass_notification_history (
+  id_history INT NOT NULL AUTO_INCREMENT,
+  id_task INT DEFAULT 0 NOT NULL,
+  id_resource INT DEFAULT 0 NOT NULL,
+  id_workflow INT DEFAULT 0 NOT NULL,
+  email_notification SMALLINT DEFAULT 0 NOT NULL,
+  dashboard_notification SMALLINT DEFAULT 0 NOT NULL,
+  PRIMARY KEY (id_history)
+);
