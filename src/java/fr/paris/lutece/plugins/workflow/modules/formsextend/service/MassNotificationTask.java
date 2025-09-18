@@ -39,6 +39,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
 
+import fr.paris.lutece.plugins.workflow.modules.formsextend.business.MassNotificationHistory;
 import fr.paris.lutece.plugins.workflow.modules.formsextend.business.MassNotificationTaskConfig;
 import fr.paris.lutece.plugins.workflowcore.business.resource.ResourceHistory;
 import fr.paris.lutece.plugins.workflowcore.service.config.ITaskConfigService;
@@ -65,6 +66,10 @@ public class MassNotificationTask extends SimpleTask
 
     @Inject
     private IMassNotificationService _massNotificationService;
+    
+    @Inject
+    @Named( MassNotificationHistoryService.BEAN_NAME )
+    IMassNotificationHistoryService _massNotificationHistoryService;
 
     @Override
     public void processTask( int nIdResourceHistory, HttpServletRequest request, Locale locale )
@@ -80,6 +85,7 @@ public class MassNotificationTask extends SimpleTask
         {
             _massNotificationService.notifyUsersDashboard( resourceHistory, config, request );
         }
+        _massNotificationHistoryService.create( initMassNotificationHistory(config, resourceHistory) );
     }
 
     @Override
@@ -92,5 +98,18 @@ public class MassNotificationTask extends SimpleTask
     public void doRemoveConfig( )
     {
         _config.remove( getId( ) );
+    }
+    
+    private MassNotificationHistory initMassNotificationHistory( MassNotificationTaskConfig config, ResourceHistory resourceHistory )
+    {
+    	MassNotificationHistory massNotificationHistory = new MassNotificationHistory();
+    	massNotificationHistory.setIdHistory( resourceHistory.getId() );
+    	massNotificationHistory.setIdTask( this.getId() );
+    	massNotificationHistory.setIdResource( resourceHistory.getIdResource( ) );
+    	massNotificationHistory.setIdWorkflow( resourceHistory.getWorkflow().getId( ) );
+    	massNotificationHistory.setEmailNotification( config.isEmailConfig( ) );
+    	massNotificationHistory.setDashboardNotification( config.isDashboardConfig( ) );
+		
+		return massNotificationHistory;
     }
 }

@@ -43,7 +43,11 @@ import javax.servlet.http.HttpServletRequest;
 
 import fr.paris.lutece.plugins.extend.service.extender.IResourceExtenderService;
 import fr.paris.lutece.plugins.extend.service.extender.ResourceExtenderService;
+import fr.paris.lutece.plugins.workflow.modules.formsextend.business.MassNotificationHistory;
+import fr.paris.lutece.plugins.workflow.modules.formsextend.business.MassNotificationTaskConfig;
+import fr.paris.lutece.plugins.workflow.modules.formsextend.service.IMassNotificationHistoryService;
 import fr.paris.lutece.plugins.workflow.modules.formsextend.service.IMassNotificationService;
+import fr.paris.lutece.plugins.workflow.modules.formsextend.service.MassNotificationHistoryService;
 import fr.paris.lutece.plugins.workflow.modules.formsextend.service.WorkflowFormsextendPlugin;
 import fr.paris.lutece.plugins.workflow.web.task.NoFormTaskComponent;
 import fr.paris.lutece.plugins.workflowcore.service.config.ITaskConfigService;
@@ -61,11 +65,13 @@ public class MassNotificationTaskComponent extends NoFormTaskComponent
 
     // TEMPLATES
     private static final String TEMPLATE_CONFIG = "admin/plugins/workflow/modules/formsextend/mass_notification_config_task_form.html";
+    private static final String TEMPLATE_TASK_MASS_NOTIFICATION_INFORMATION = "admin/plugins/workflow/modules/consultation/task_mass_notification_information.html";
 
     // MARKS
     private static final String MARK_CONFIG = "config";
     private static final String MARK_EXTENDER_TYPES = "extenderTypes";
     private static final String MARK_EMAIL_MARKERS = "email_markers";
+    private static final String MARK_NOTIFY_HISTORY = "information_history";
 
     @Inject
     @Named( WorkflowFormsextendPlugin.BEAN_CONFIG )
@@ -77,6 +83,10 @@ public class MassNotificationTaskComponent extends NoFormTaskComponent
 
     @Inject
     private IMassNotificationService _massNotificationService;
+    
+    @Inject
+    @Named( MassNotificationHistoryService.BEAN_NAME )
+    private IMassNotificationHistoryService _taskMassNotificationHistoryService;
 
     @Override
     public String getDisplayConfigForm( HttpServletRequest request, Locale locale, ITask task )
@@ -95,6 +105,16 @@ public class MassNotificationTaskComponent extends NoFormTaskComponent
     @Override
     public String getDisplayTaskInformation( int nIdHistory, HttpServletRequest request, Locale locale, ITask task )
     {
-        return null;
+    	Map<String, Object> model = new HashMap<>( );
+        MassNotificationTaskConfig config = _config.findByPrimaryKey( task.getId( ) );
+
+        MassNotificationHistory massNotifyConsultationHistory = _taskMassNotificationHistoryService.find(task.getId(), nIdHistory);
+        
+        model.put( MARK_CONFIG, config );
+        model.put( MARK_NOTIFY_HISTORY, massNotifyConsultationHistory );
+        
+        HtmlTemplate template = AppTemplateService.getTemplate( TEMPLATE_TASK_MASS_NOTIFICATION_INFORMATION, locale, model );
+
+        return template.getHtml( );
     }
 }
