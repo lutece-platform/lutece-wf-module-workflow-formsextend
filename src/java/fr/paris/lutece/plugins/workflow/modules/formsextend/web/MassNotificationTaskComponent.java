@@ -37,25 +37,35 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import fr.paris.lutece.plugins.extend.service.extender.IResourceExtenderService;
-import fr.paris.lutece.plugins.extend.service.extender.ResourceExtenderService;
+import fr.paris.lutece.plugins.workflow.modules.formsextend.business.MassNotificationTaskConfig;
 import fr.paris.lutece.plugins.workflow.modules.formsextend.service.IMassNotificationService;
 import fr.paris.lutece.plugins.workflow.modules.formsextend.service.WorkflowFormsextendPlugin;
 import fr.paris.lutece.plugins.workflow.web.task.NoFormTaskComponent;
+import fr.paris.lutece.plugins.workflowcore.business.config.ITaskConfig;
+import fr.paris.lutece.plugins.workflowcore.business.task.ITaskType;
 import fr.paris.lutece.plugins.workflowcore.service.config.ITaskConfigService;
 import fr.paris.lutece.plugins.workflowcore.service.task.ITask;
+import fr.paris.lutece.portal.service.message.AdminMessage;
+import fr.paris.lutece.portal.service.message.AdminMessageService;
 import fr.paris.lutece.portal.service.template.AppTemplateService;
+import fr.paris.lutece.portal.web.constants.Messages;
 import fr.paris.lutece.util.html.HtmlTemplate;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * 
  * EmailMassNotificationTaskComponent
  *
  */
+@ApplicationScoped
+@Named( "workflow-formsextend.massNotificationTaskComponent" )
 public class MassNotificationTaskComponent extends NoFormTaskComponent
 {
 
@@ -68,22 +78,44 @@ public class MassNotificationTaskComponent extends NoFormTaskComponent
     private static final String MARK_EMAIL_MARKERS = "email_markers";
 
     @Inject
-    @Named( WorkflowFormsextendPlugin.BEAN_CONFIG )
-    private ITaskConfigService _config;
-
-    @Inject
-    @Named( ResourceExtenderService.BEAN_SERVICE )
+    @Named( "extend.resourceExtenderService" )
     private IResourceExtenderService _resourceExtenderService;
 
     @Inject
     private IMassNotificationService _massNotificationService;
 
+    /**
+     * Constructor for the CDI proxy
+     */
+    MassNotificationTaskComponent( )
+    {
+    }
+
+    /**
+     * Constructor
+     * 
+     * @param taskType
+     *            the mass notification task type
+     * @param taskConfigService
+     *            the configuration service
+     */
+    @Inject
+    public MassNotificationTaskComponent( @Named( WorkflowFormsextendPlugin.BEAN_TASK_TYPE ) ITaskType taskType,
+            @Named( WorkflowFormsextendPlugin.BEAN_CONFIG ) ITaskConfigService taskConfigService )
+    {
+        setTaskType( taskType );
+        setTaskConfigService( taskConfigService );
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getDisplayConfigForm( HttpServletRequest request, Locale locale, ITask task )
     {
         Map<String, Object> model = new HashMap<>( );
 
-        model.put( MARK_CONFIG, _config.findByPrimaryKey( task.getId( ) ) );
+        model.put( MARK_CONFIG, getTaskConfigService( ).findByPrimaryKey( task.getId( ) ) );
         model.put( MARK_EXTENDER_TYPES, _resourceExtenderService.getExtenderTypes( locale ) );
         model.put( MARK_EMAIL_MARKERS, _massNotificationService.getAvailableMarkers( task, locale ) );
 
@@ -92,6 +124,59 @@ public class MassNotificationTaskComponent extends NoFormTaskComponent
         return html.getHtml( );
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String validateConfig( ITaskConfig config, HttpServletRequest request )
+    {
+        String strError = super.validateConfig( config, request );
+
+        if ( StringUtils.isNotBlank( strError ) )
+        {
+            return strError;
+        }
+
+        MassNotificationTaskConfig massNotificationConfig = (MassNotificationTaskConfig) config;
+
+        if ( massNotificationConfig.isEmailConfig( )
+                && isAnyBlank( massNotificationConfig.getSubjectForEmail( ), massNotificationConfig.getSenderNameForEmail( ),
+                        massNotificationConfig.getSenderEmailForEmail( ), massNotificationConfig.getMessageForEmail( ) )
+                || massNotificationConfig.isEmailConfig( ) && ArrayUtils.isEmpty( massNotificationConfig.getListExtenderTypesForEmail( ) )
+                || massNotificationConfig.isDashboardConfig( )
+                        && isAnyBlank( massNotificationConfig.getSubjectForDashboard( ), massNotificationConfig.getSenderForDashboard( ),
+                                massNotificationConfig.getMessageForDashboard( ) )
+                || massNotificationConfig.isDashboardConfig( ) && ArrayUtils.isEmpty( massNotificationConfig.getListExtenderTypesForDashboard( ) ) )
+        {
+            return AdminMessageService.getMessageUrl( request, Messages.MANDATORY_FIELDS, AdminMessage.TYPE_STOP );
+        }
+
+        return StringUtils.EMPTY;
+    }
+
+    /**
+     * Tells whether one of the values is blank once its HTML tags are removed
+     *
+     * @param values
+     *            the values
+     * @return true if one value is blank
+     */
+    private static boolean isAnyBlank( String... values )
+    {
+        for ( String strValue : values )
+        {
+            if ( StringUtils.isBlank( strValue ) || StringUtils.isBlank( strValue.replaceAll( "<[^>]*>|&nbsp;", "" ) ) )
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getDisplayTaskInformation( int nIdHistory, HttpServletRequest request, Locale locale, ITask task )
     {

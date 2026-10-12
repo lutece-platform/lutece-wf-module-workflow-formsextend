@@ -33,8 +33,6 @@
  */
 package fr.paris.lutece.plugins.workflow.modules.formsextend.service;
 
-import javax.servlet.http.HttpServletRequest;
-
 import fr.paris.lutece.portal.service.util.AppLogService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.util.httpaccess.HttpAccess;
@@ -63,14 +61,14 @@ public class DashboardNotificationService
      * Send list notification
      * 
      * @param strJson
-     * @param request
+     *            the notifications
      * @return true if success
      */
-    public static boolean sendMassNotification( String strJson, HttpServletRequest request )
+    public static boolean sendMassNotification( String strJson )
     {
         String strRelativeUri = AppPropertiesService.getProperty( NOTIFICATION_API_ENDPOINT_ADDLIST, "rest/notification-api/addList" );
 
-        String strJsonResult = doPostJson( strRelativeUri, strJson, request );
+        String strJsonResult = doPostJson( strRelativeUri, strJson );
 
         return strJsonResult != null && strJsonResult.contains( "success" );
     }
@@ -79,11 +77,12 @@ public class DashboardNotificationService
      * Do Post json
      * 
      * @param strRelativeUri
+     *            the endpoint
      * @param strJson
-     * @param request
+     *            the body
      * @return string Json
      */
-    private static String doPostJson( String strRelativeUri, String strJson, HttpServletRequest request )
+    private static String doPostJson( String strRelativeUri, String strJson )
     {
         String strJsonResult = null;
 
