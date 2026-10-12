@@ -50,6 +50,21 @@ public class WorkflowFormsextendPlugin extends Plugin
     public static final String PLUGIN_NAME = "workflow-formsextend";
     public static final String BEAN_CONFIG = PLUGIN_NAME + ".taskMassNotificationConfigService";
 
+    /**
+     * CDI name of the mass notification task type
+     */
+    public static final String BEAN_TASK_TYPE = PLUGIN_NAME + ".taskMassNotification";
+
+    /**
+     * CDI name of the mass notification task
+     */
+    public static final String BEAN_TASK = PLUGIN_NAME + ".massNotificationTask";
+
+    /**
+     * CDI name of the mass notification task configuration
+     */
+    public static final String BEAN_TASK_CONFIG = PLUGIN_NAME + ".massNotificationTaskConfig";
+
     @Override
     public void init( )
     {

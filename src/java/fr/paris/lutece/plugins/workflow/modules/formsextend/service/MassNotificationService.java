@@ -43,14 +43,13 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import org.apache.commons.lang.StringUtils;
-import org.json.simple.JSONObject;
-
-import com.google.common.collect.Lists;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import fr.paris.lutece.plugins.extend.business.extender.history.ResourceExtenderHistory;
 import fr.paris.lutece.plugins.extend.business.extender.history.ResourceExtenderHistoryFilter;
@@ -74,23 +73,24 @@ import fr.paris.lutece.plugins.workflowcore.business.resource.ResourceHistory;
 import fr.paris.lutece.plugins.workflowcore.business.workflow.Workflow;
 import fr.paris.lutece.plugins.workflowcore.service.action.ActionService;
 import fr.paris.lutece.plugins.workflowcore.service.action.IActionService;
-import fr.paris.lutece.plugins.workflowcore.service.resource.IResourceWorkflowService;
-import fr.paris.lutece.plugins.workflowcore.service.resource.ResourceWorkflowService;
 import fr.paris.lutece.plugins.workflowcore.service.task.ITask;
 import fr.paris.lutece.portal.service.i18n.I18nService;
 import fr.paris.lutece.portal.service.mail.MailService;
 import fr.paris.lutece.portal.service.template.AppTemplateService;
 import fr.paris.lutece.portal.service.util.AppLogService;
 import fr.paris.lutece.portal.service.util.AppPathService;
-import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.util.ReferenceList;
 import fr.paris.lutece.util.html.HtmlTemplate;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 /**
  * 
  * MassNotificationService
  *
  */
+@ApplicationScoped
 public class MassNotificationService implements IMassNotificationService
 {
     private static final String EMAIL_SENDING_LIMIT = "workflow-formsextend.task.mass.notification.email.sending.limit";
@@ -98,7 +98,8 @@ public class MassNotificationService implements IMassNotificationService
     private static final String PROPERTY_ID_EMAIL_ATTRIBUTE = "workflow-formsextend.cacheuserattribute.attributeId.email";
     private static final String PROPERTY_FORMS_RESPONSE_URL_FO = "module.workflow.formsextend.marker.forms_response_url_fo";
     private static final String MARK_RESPONSE_URL = "view_response_url";
-    
+    private static final ObjectMapper MAPPER = new ObjectMapper( );
+
     @Inject
     @Named( ResourceExtenderHistoryService.BEAN_SERVICE )
     private IResourceExtenderHistoryService _resourceExtenderHistoryService;
@@ -106,11 +107,19 @@ public class MassNotificationService implements IMassNotificationService
     @Inject
     @Named( ActionService.BEAN_SERVICE )
     private IActionService _actionService;
-    
+
     @Inject
-    @Named( ResourceWorkflowService.BEAN_SERVICE )
-    IResourceWorkflowService _resourceWorkflowService;
-    
+    @ConfigProperty( name = EMAIL_SENDING_LIMIT, defaultValue = "100" )
+    private int _nEmailSendingLimit;
+
+    @Inject
+    @ConfigProperty( name = DASHBOARD_SENDING_LIMIT, defaultValue = "100" )
+    private int _nDashboardSendingLimit;
+
+    @Inject
+    @ConfigProperty( name = PROPERTY_ID_EMAIL_ATTRIBUTE, defaultValue = "1" )
+    private int _nIdEmailAttribute;
+
     /**
      * {@inheritDoc}
      */
@@ -142,8 +151,10 @@ public class MassNotificationService implements IMassNotificationService
      * distinctByKey
      * 
      * @param <T>
+     *            the element type
      * @param keyExtractor
-     * @return
+     *            the key extractor
+     * @return a predicate keeping the first element of each key
      */
     private static <T> Predicate<T> distinctByKey( Function<? super T, Object> keyExtractor )
     {
@@ -158,11 +169,11 @@ public class MassNotificationService implements IMassNotificationService
     public Map<String, Object> getAvailableMarkersValues( FormResponse formResponse )
     {
         Map<String, Object> model = new HashMap<>( );
-        
-        model.put( MARK_RESPONSE_URL, FormsResponseUtils.buildFormsResponseFOUrl(formResponse.getId( )) );
 
         if ( formResponse != null )
         {
+            model.put( MARK_RESPONSE_URL, FormsResponseUtils.buildFormsResponseFOUrl( formResponse.getId( ) ) );
+
             for ( FormResponseStep formResponseStep : formResponse.getSteps( ) )
             {
                 for ( FormQuestionResponse formQuestionResponse : formResponseStep.getQuestions( ) )
@@ -192,8 +203,8 @@ public class MassNotificationService implements IMassNotificationService
                 .filter( distinctByKey( ResourceExtenderHistory::getUserGuid ) )
                 .collect( Collectors.toList( ) );
         
-        List<List<ResourceExtenderHistory>> partitionedList = Lists.partition( listResourceExtenderHistory,
-                AppPropertiesService.getPropertyInt( EMAIL_SENDING_LIMIT, 100 ) );
+        List<List<ResourceExtenderHistory>> partitionedList = ListUtils.partition( listResourceExtenderHistory,
+                _nEmailSendingLimit );
 
         for ( List<ResourceExtenderHistory> listResourceExtenderHistoryPart : partitionedList )
         {
@@ -211,10 +222,8 @@ public class MassNotificationService implements IMassNotificationService
      * {@inheritDoc}
      */
     @Override
-    public void notifyUsersDashboard( ResourceHistory resourceHistory, MassNotificationTaskConfig config, HttpServletRequest request )
+    public void notifyUsersDashboard( ResourceHistory resourceHistory, MassNotificationTaskConfig config )
     {
-        List<JSONObject> listNotificationJson = new ArrayList<>( );
-        
         FormResponse formResponse = FormResponseHome.findByPrimaryKey( resourceHistory.getIdResource( ) );
         Map<String, Object> model = getAvailableMarkersValues( formResponse );
 
@@ -225,31 +234,47 @@ public class MassNotificationService implements IMassNotificationService
                 .filter( distinctByKey( ResourceExtenderHistory::getUserGuid ) )
                 .collect( Collectors.toList( ) );
         
-        List<List<ResourceExtenderHistory>> partitionedList = Lists.partition( listResourceExtenderHistory,
-                AppPropertiesService.getPropertyInt( DASHBOARD_SENDING_LIMIT, 100 ) );
+        List<List<ResourceExtenderHistory>> partitionedList = ListUtils.partition( listResourceExtenderHistory,
+                _nDashboardSendingLimit );
 
         HtmlTemplate html = AppTemplateService.getTemplateFromStringFtl( config.getMessageForDashboard( ), null, model );
 
         for ( List<ResourceExtenderHistory> listResourceExtenderHistoryPart : partitionedList )
         {
+            List<Map<String, Object>> listNotification = new ArrayList<>( );
+
             for ( ResourceExtenderHistory resourceExtenderHistory : listResourceExtenderHistoryPart )
             {
-                listNotificationJson.add( constructJsonNotification( config, html, resourceExtenderHistory, model ) );
+                listNotification.add( constructNotification( config, html, resourceExtenderHistory, model ) );
             }
-            DashboardNotificationService.sendMassNotification( listNotificationJson.toString( ), request );
+
+            try
+            {
+                DashboardNotificationService.sendMassNotification( MAPPER.writeValueAsString( listNotification ) );
+            }
+            catch( JsonProcessingException e )
+            {
+                AppLogService.error( "Unable to serialize the dashboard notifications", e );
+            }
         }
 
     }
 
     /**
-     * Construct json for notify the API Rest Mydashboard notification
+     * Build one notification of the Mydashboard notification API
+     * 
      * @param config
+     *            the task configuration
      * @param html
+     *            the message
      * @param resourceExtenderHistory
-     * @param model 
-     * @return json
+     *            the notified history entry
+     * @param model
+     *            the marker values
+     * @return the notification fields
      */
-    private JSONObject constructJsonNotification( MassNotificationTaskConfig config, HtmlTemplate html, ResourceExtenderHistory resourceExtenderHistory, Map<String, Object> model )
+    private Map<String, Object> constructNotification( MassNotificationTaskConfig config, HtmlTemplate html, ResourceExtenderHistory resourceExtenderHistory,
+            Map<String, Object> model )
     {
         Map<String, Object> map = new HashMap< >( );
         
@@ -258,14 +283,18 @@ public class MassNotificationService implements IMassNotificationService
         map.put( FormsExtendConstants.JSON_MESSAGE, html.getHtml( ) );
         map.put( FormsExtendConstants.JSON_ID_USER, resourceExtenderHistory.getUserGuid( ) );
 
-        return new JSONObject( map );
+        return map;
     }
 
     /**
      * Send email
+     * 
      * @param strEmails
+     *            the recipients
      * @param config
+     *            the task configuration
      * @param model
+     *            the marker values
      */
     private void sendEmail ( String strEmails, MassNotificationTaskConfig config, Map<String,Object> model )
     {
@@ -278,22 +307,23 @@ public class MassNotificationService implements IMassNotificationService
         }
         else
         {
-            AppLogService.error( "Email list is empty", new Exception( ) );
+            AppLogService.info( "Mass notification: no e-mail to send" );
         }
     }
     
     /**
      * Populate email list by users cached attribute
-     * @param listCachedAttributes
+     * 
      * @param listGuid
+     *            the user guids
+     * @return the emails separated by semicolons
      */
-    public static String getEmailListByUsersCachedAttribute ( List<String> listGuid )
+    private String getEmailListByUsersCachedAttribute( List<String> listGuid )
     {
         Map<String, String> listCachedAttributes = new HashMap< >( );
         List<String> listEmail = new ArrayList< >( );
-        int nIdEmailAttribute = AppPropertiesService.getPropertyInt( PROPERTY_ID_EMAIL_ATTRIBUTE, 1 );
         
-        listCachedAttributes.putAll( CacheUserAttributeService.getCachedAttributesByListUserIdsAndAttributeId( listGuid, nIdEmailAttribute ) );
+        listCachedAttributes.putAll( CacheUserAttributeService.getCachedAttributesByListUserIdsAndAttributeId( listGuid, _nIdEmailAttribute ) );
         
         for ( Map.Entry<String, String> cachedAttribute : listCachedAttributes.entrySet( ) )
         {               
@@ -314,7 +344,7 @@ public class MassNotificationService implements IMassNotificationService
     {
         List<ResourceExtenderHistory> listResourceExtenderHistory = new ArrayList<>( );
         
-        for ( String extenderType : config.getListExtenderTypesForEmail( ) )
+        for ( String extenderType : ArrayUtils.nullToEmpty( config.getListExtenderTypesForEmail( ) ) )
         {
             ResourceExtenderHistoryFilter filter = new ResourceExtenderHistoryFilter( );
             filter.setExtenderType( extenderType );
@@ -339,7 +369,7 @@ public class MassNotificationService implements IMassNotificationService
     {
         List<ResourceExtenderHistory> listResourceExtenderHistory = new ArrayList<>( );
 
-        for ( String extenderType : config.getListExtenderTypesForDashboard( ) )
+        for ( String extenderType : ArrayUtils.nullToEmpty( config.getListExtenderTypesForDashboard( ) ) )
         {
             ResourceExtenderHistoryFilter filter = new ResourceExtenderHistoryFilter( );
             filter.setExtenderType( extenderType );
@@ -353,8 +383,11 @@ public class MassNotificationService implements IMassNotificationService
     
     /**
      * Get resource type
+     * 
      * @param strResourceType
+     *            the workflow resource type
      * @param nIdForm
+     *            the form id
      * @return resource type
      */
     private String getResourceType( String strResourceType, int nIdForm )

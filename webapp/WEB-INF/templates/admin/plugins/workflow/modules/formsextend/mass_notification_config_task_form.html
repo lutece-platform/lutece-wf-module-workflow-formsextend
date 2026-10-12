@@ -1,176 +1,99 @@
 <#include "/admin/util/editor/editor.html" />
-<fieldset>
-	<@row>
-		<legend>#i18n{module.workflow.formsextend.task_mass_notification.config.title}</legend>
-		<@div class='col-sm-8'>
-			<@tabs>
-				<@tabList id='tabs'>
-						<@tabLink id='tab-email' href='#pane-email' title='#i18n{module.workflow.formsextend.task_mass_notification.emailLabel}' />
-						<@tabLink id='tab-dashboard' href='#pane-dashboard' title='#i18n{module.workflow.formsextend.task_mass_notification.dashboardLabel}' />
-				</@tabList>
-				<@tabContent>
-						<@tabPanel id='pane-email' active=true>
-							<#include "mass_notification_email_task_form.html" />
-						</@tabPanel>
-						<@tabPanel id='pane-dashboard'>
-							<#include "mass_notification_dashboard_task_form.html" />
-						</@tabPanel>
-				</@tabContent>
-			</@tabs>
-		</@div>	
-		<@div class='col-sm-4'>
-			<h3>#i18n{module.workflow.formsextend.task_mass_notification.markers.label_table_title}</h3>
-			<@table>
-				<tr>
-					<th>#i18n{module.workflow.formsextend.task_mass_notification.markers.label_description}</th>
-					<th>#i18n{module.workflow.formsextend.task_mass_notification.markers.label_marker}</th>
-					<th></th>
-				</tr>
-				<#if email_markers?exists>
-					<#list email_markers as marker>
-						<tr>
-							<@td class='marker'>${marker.name!''}</@td>
-							<@td class='marker'>&#36;&#123;${marker.code}&#33;&#125;</@td>
-							<@td><@icon style='copy' title='Copy line' /></@td>
-						</tr>
-					</#list>
-				</#if>
-			</@table>
-		</@div>
-	</@row>
-</fieldset>
+<#assign emailActive=!((config.emailConfig)!false) && ((config.dashboardConfig)!false) />
+<@fieldSet legend='#i18n{module.workflow.formsextend.task_mass_notification.config.title}'>
+<@row>
+	<@columns sm=8>
+		<@tabs id='mass-notification-tabs' keepState=false>
+			<@tabList>
+				<@tabLink href='#pane-email' title='#i18n{module.workflow.formsextend.task_mass_notification.emailLabel}' active=!emailActive />
+				<@tabLink href='#pane-dashboard' title='#i18n{module.workflow.formsextend.task_mass_notification.dashboardLabel}' active=emailActive />
+			</@tabList>
+			<@tabContent>
+				<@tabPanel id='pane-email' active=!emailActive>
+					<#include "mass_notification_email_task_form.html" />
+				</@tabPanel>
+				<@tabPanel id='pane-dashboard' active=emailActive>
+					<#include "mass_notification_dashboard_task_form.html" />
+				</@tabPanel>
+			</@tabContent>
+		</@tabs>
+	</@columns>
+	<@columns sm=4>
+		<h3>#i18n{module.workflow.formsextend.task_mass_notification.markers.label_table_title}</h3>
+		<@table>
+			<@tr>
+				<@th>#i18n{module.workflow.formsextend.task_mass_notification.markers.label_description}</@th>
+				<@th>#i18n{module.workflow.formsextend.task_mass_notification.markers.label_marker}</@th>
+				<@th />
+			</@tr>
+			<#list email_markers as marker>
+			<@tr>
+				<@td class='marker cursor-pointer'>${marker.name!''}</@td>
+				<@td class='marker cursor-pointer'>&#36;&#123;${marker.code}&#33;&#125;</@td>
+				<@td><@button class='marker-copy' size='sm' color='light' buttonIcon='copy' hideTitle=['all'] title='#i18n{module.workflow.formsextend.task_mass_notification.markers.labelCopy}' /></@td>
+			</@tr>
+			</#list>
+		</@table>
+	</@columns>
+</@row>
+</@fieldSet>
 <@initEditor/>
-<style>
-.marker:hover, .fa-copy:hover{ cursor: pointer; opacity: .8}
-.marker:nth-child(even) td{ background: #777; color: #fff }
-</style>
 <script>
-$( function(){
-	tinymce.activeEditor.on('submit', function (e) {
-      if (!tinymce.activeEditor.getContent({ format: 'text' }).trim().length) {
-        e.preventDefault();
-		const tArea = '#' + tinymce.activeEditor.id + ' + .form-text';
-		$( tArea ).addClass('text-danger').removeClass('text-muted');
-		$( tArea ).html('Champ obligatoire');
-      }
-	});
+document.addEventListener( 'DOMContentLoaded', function( ) {
+	const sections = [
+		{ check: 'isEmailConfigCheck', flag: 'emailConfig', content: 'contentEmailConfig', required: [ 'subjectForEmail', 'senderNameForEmail', 'senderEmailForEmail' ], cleared: [ 'subjectForEmail', 'senderNameForEmail', 'senderEmailForEmail', 'messageForEmail' ], types: 'listExtenderTypesForEmail' },
+		{ check: 'isDashbordConfigCheck', flag: 'dashbordConfig', content: 'contentDashboardConfig', required: [ 'subjectForDashboard', 'senderForDashboard' ], cleared: [ 'subjectForDashboard', 'senderForDashboard', 'messageForDashboard' ], types: 'listExtenderTypesForDashboard' }
+	];
 
-	$('.marker').on( 'dblclick', function(e){
-		if( $( '.tab-pane.active .richtext' ).length > 0 ){
-			var c = '<p>' + $(this).text() + '</p>';
-			tinymce.activeEditor.insertContent( '<p>' + c + '</p>' );
-		} else { 
-			var c = $(this).text().replace(/\s+/g, ' ');
-			$('textarea').val( c );
+	function setText( id, value ) {
+		const field = document.getElementById( id );
+		if ( field ) {
+			field.value = value;
 		}
-	});
-
-	$('.fa-copy').on( 'click', function(e){
-		$(this).parent().prevAll().css( 'opacity','.5').animate( {opacity: 1}, 3000 );
-		var elTxt = $(this).parent().siblings().text(); 
-		copyToClipboard( elTxt );	
-	});
-
-		// Visibility tabs
-		var isEmailConfig = '${(config.emailConfig?c)!}';
-		var isDashboardConfig = '${(config.dashboardConfig?c)!}';
-		
-		//Select the email tab if it contains data
-		if( isEmailConfig == 'true' ){
-			$("#tab-email a").tab('show');
-			disabledEmailConfig(true);
-		} else {
-			clearInputEmailConfig();
-			disabledEmailConfig(false);
+		if ( window.tinymce && tinymce.get( id ) ) {
+			tinymce.get( id ).setContent( value );
 		}
-		
-		//Select the dashboard tab if it contains data
-		if( isDashboardConfig  == 'true' ){
-			if( isEmailConfig != 'true' ){
-				$("#tab-dashboard a").tab('show');
+	}
+
+	function apply( section ) {
+		const enabled = document.getElementById( section.check ).checked;
+		document.getElementById( section.content ).classList.toggle( 'd-none', !enabled );
+		document.getElementById( section.flag ).value = enabled;
+		section.required.forEach( function( id ) { document.getElementById( id ).required = enabled; } );
+		if ( !enabled ) {
+			section.cleared.forEach( function( id ) { setText( id, '' ); } );
+			document.querySelectorAll( '.' + section.types ).forEach( function( box ) { box.checked = false; } );
+		}
+	}
+
+	sections.forEach( function( section ) {
+		document.getElementById( section.check ).addEventListener( 'change', function( ) { apply( section ); } );
+		apply( section );
+	} );
+
+	function markerText( row ) {
+		return row.querySelectorAll( '.marker' )[1].textContent.replace( /\s+/g, ' ' ).trim( );
+	}
+
+	document.querySelectorAll( '.marker' ).forEach( function( cell ) {
+		cell.addEventListener( 'dblclick', function( ) {
+			const text = markerText( cell.closest( 'tr' ) );
+			const area = document.querySelector( '.tab-pane.active textarea' );
+			if ( !area ) {
+				return;
 			}
-			disabledDashboardConfig(true);
-		} else {
-			clearInputDashboardConfig( );
-			disabledDashboardConfig(false);
-		}
-		
-		//Management of the display of the email configuration block
-		$('#isEmailConfigCheck').click(function(){
-			showEmailConfig();
-		});		
-		showEmailConfig();
-		
-		//Management of the display of the dashboard configuration block
-		$('#isDashbordConfigCheck').click(function(){
-			showDashboardConfig();
-		});		
-		showDashboardConfig();
-	});
-	
-	//Management of the display of the email configuration block
-	function showEmailConfig(){
-		if($('#isEmailConfigCheck').is(':checked')){
-			$('#contentEmailConfig').show();
-			disabledEmailConfig(true);
-		}else{
-			$('#contentEmailConfig').hide();
-			clearInputEmailConfig();
-			disabledEmailConfig(false);
-		}	
-	}
-	//Management of the display of the dashboard configuration block
-	function showDashboardConfig(){
-		if($('#isDashbordConfigCheck').is(':checked')){
-			$('#contentDashboardConfig').show();
-			disabledDashboardConfig(true);
-		}else{
-			$('#contentDashboardConfig').hide();
-			clearInputDashboardConfig( );
-			disabledDashboardConfig(false);
-		}
-	}
-	
-	//Clear email notification configuration inputs
-	function clearInputEmailConfig( ){
-		$('#subjectForEmail').val( '' );
-		$('#senderNameForEmail').val( '' );
-		$('#senderEmailForEmail').val( '' );
-		$('#messageForEmail').val( '' );
-		$('.listExtenderTypesForEmail').prop('checked', false);
-	}
-	
-	//Clear dashboard notification configuration inputs
-	function clearInputDashboardConfig( ){
-		$('#subjectForDashboard').val( '' );
-		$('#senderForDashboard').val( '' );
-		$('#messageForDashboard').val( '' );
-		$('.listExtenderTypesForDashboard').prop('checked', false);
-	}
+			if ( window.tinymce && tinymce.get( area.id ) ) {
+				tinymce.get( area.id ).insertContent( '<p>' + text + '</p>' );
+			} else {
+				area.setRangeText( text, area.selectionStart, area.selectionEnd, 'end' );
+			}
+		} );
+	} );
 
-	//Enabling and disabling required fields for email notification
-	function disabledEmailConfig( value ){
-		$('#emailConfig').val(value);
-		$('#subjectForEmail').prop('required', value );
-		$('#senderNameForEmail').prop('required', value );
-		$('#senderEmailForEmail').prop('required', value );
-		// $('#messageForEmail').prop('required', value );
-	}
-
-	//Enabling and disabling required fields for dashboard notificaiton
-	function disabledDashboardConfig( value ){
-		$('#dashbordConfig').val(value);
-		$('#subjectForDashboard').prop('required', value );
-		$('#senderForDashboard').prop('required', value );
-		// $('#messageForDashboard').prop('required', value );
-	}
-	
-	function copyToClipboard( txt ) {
-		var $temp = $("<input>"), sTxt=txt.replace(/\s+/g, ' ');
-		$("body").append($temp);
-		$temp.val( sTxt ).select();
-		document.execCommand("copy");
-		$temp.remove();
-	}
-
+	document.querySelectorAll( '.marker-copy' ).forEach( function( button ) {
+		button.addEventListener( 'click', function( ) {
+			navigator.clipboard.writeText( markerText( button.closest( 'tr' ) ) );
+		} );
+	} );
+} );
 </script>

@@ -35,10 +35,7 @@ package fr.paris.lutece.plugins.workflow.modules.formsextend.service;
 
 import java.util.Locale;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.servlet.http.HttpServletRequest;
-
+import fr.paris.lutece.api.user.User;
 import fr.paris.lutece.plugins.workflow.modules.formsextend.business.MassNotificationTaskConfig;
 import fr.paris.lutece.plugins.workflowcore.business.resource.ResourceHistory;
 import fr.paris.lutece.plugins.workflowcore.service.config.ITaskConfigService;
@@ -46,12 +43,18 @@ import fr.paris.lutece.plugins.workflowcore.service.resource.IResourceHistorySer
 import fr.paris.lutece.plugins.workflowcore.service.resource.ResourceHistoryService;
 import fr.paris.lutece.plugins.workflowcore.service.task.SimpleTask;
 import fr.paris.lutece.portal.service.i18n.I18nService;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * 
  * MassNotificationEmailTask
  *
  */
+@Dependent
+@Named( WorkflowFormsextendPlugin.BEAN_TASK )
 public class MassNotificationTask extends SimpleTask
 {
 
@@ -66,28 +69,44 @@ public class MassNotificationTask extends SimpleTask
     @Inject
     private IMassNotificationService _massNotificationService;
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public void processTask( int nIdResourceHistory, HttpServletRequest request, Locale locale )
+    public boolean processTaskWithResult( int nIdResource, String strResourceType, int nIdResourceHistory, HttpServletRequest request, Locale locale,
+            User user )
     {
         ResourceHistory resourceHistory = _resourceHistoryService.findByPrimaryKey( nIdResourceHistory );
         MassNotificationTaskConfig config = _config.findByPrimaryKey( getId( ) );
 
+        if ( config == null || resourceHistory == null )
+        {
+            return true;
+        }
         if ( config.isEmailConfig( ) )
         {
             _massNotificationService.notifyUsersByEmail( resourceHistory, config );
         }
         if ( config.isDashboardConfig( ) )
         {
-            _massNotificationService.notifyUsersDashboard( resourceHistory, config, request );
+            _massNotificationService.notifyUsersDashboard( resourceHistory, config );
         }
+
+        return true;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getTitle( Locale locale )
     {
         return I18nService.getLocalizedString( getTaskType( ).getTitleI18nKey( ), locale );
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void doRemoveConfig( )
     {

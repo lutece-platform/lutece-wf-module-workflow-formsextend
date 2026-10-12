@@ -33,6 +33,9 @@
  */
 package fr.paris.lutece.plugins.workflow.modules.formsextend.business;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Named;
+
 import org.apache.commons.lang3.StringUtils;
 
 import fr.paris.lutece.plugins.workflow.modules.formsextend.service.WorkflowFormsextendPlugin;
@@ -44,8 +47,14 @@ import fr.paris.lutece.util.sql.DAOUtil;
  * MassNotificationTaskConfigDAO
  *
  */
+@ApplicationScoped
+@Named( MassNotificationTaskConfigDAO.BEAN_NAME )
 public class MassNotificationTaskConfigDAO implements ITaskConfigDAO<MassNotificationTaskConfig>
 {
+    /**
+     * CDI name of the DAO
+     */
+    public static final String BEAN_NAME = "workflow-formsextend.taskMassNotificationConfigDAO";
 
     // Constants
     private static final String SQL_QUERY_SELECT = "SELECT id_task, email_message, email_subject, email_sender_name, email_sender_email, email_extender_types, is_email_config, dashboard_message, dashboard_subject, dashboard_sender, dashboard_extender_types, is_dashboard_config FROM task_forms_extend_mass_notification_cf WHERE id_task = ?";
@@ -79,7 +88,6 @@ public class MassNotificationTaskConfigDAO implements ITaskConfigDAO<MassNotific
             daoUtil.setBoolean( ++nIndex, config.isDashboardConfig( ) );
 
             daoUtil.executeUpdate( );
-            daoUtil.free( );
         }
     }
 
@@ -111,7 +119,6 @@ public class MassNotificationTaskConfigDAO implements ITaskConfigDAO<MassNotific
             daoUtil.setInt( ++nIndex, config.getIdTask( ) );
 
             daoUtil.executeUpdate( );
-            daoUtil.free( );
         }
     }
 
@@ -160,7 +167,6 @@ public class MassNotificationTaskConfigDAO implements ITaskConfigDAO<MassNotific
                 massNotificationTaskConfig.setDashboardConfig( daoUtil.getBoolean( ++nIndex ) );
             }
 
-            daoUtil.free( );
 
             return massNotificationTaskConfig;
         }
@@ -176,7 +182,6 @@ public class MassNotificationTaskConfigDAO implements ITaskConfigDAO<MassNotific
         {
             daoUtil.setInt( 1, nIdTask );
             daoUtil.executeUpdate( );
-            daoUtil.free( );
         }
     }
 

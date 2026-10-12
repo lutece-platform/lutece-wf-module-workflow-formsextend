@@ -36,8 +36,6 @@ package fr.paris.lutece.plugins.workflow.modules.formsextend.service;
 import java.util.Locale;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
-
 import fr.paris.lutece.plugins.forms.business.FormResponse;
 import fr.paris.lutece.plugins.workflow.modules.formsextend.business.MassNotificationTaskConfig;
 import fr.paris.lutece.plugins.workflowcore.business.resource.ResourceHistory;
@@ -53,7 +51,11 @@ public interface IMassNotificationService
 {
     /**
      * Get available markers
+     * 
      * @param task
+     *            the task
+     * @param locale
+     *            the locale
      * @return reference list of available markers
      */
     ReferenceList getAvailableMarkers( ITask task, Locale locale );
@@ -62,25 +64,28 @@ public interface IMassNotificationService
      * Get available markers values
      * 
      * @param formResponse
+     *            the form response
+     * @return the marker values
      */
     Map<String, Object> getAvailableMarkersValues( FormResponse formResponse );
 
     /**
      * Notify users by email
      * 
-     * @param locale
      * @param resourceHistory
+     *            the resource history
      * @param config
+     *            the task configuration
      */
     void notifyUsersByEmail( ResourceHistory resourceHistory, MassNotificationTaskConfig config );
 
     /**
      * Notify dashboard users
      * 
-     * @param locale
      * @param resourceHistory
+     *            the resource history
      * @param config
-     * @param request
+     *            the task configuration
      */
-    void notifyUsersDashboard( ResourceHistory resourceHistory, MassNotificationTaskConfig config, HttpServletRequest request );
+    void notifyUsersDashboard( ResourceHistory resourceHistory, MassNotificationTaskConfig config );
 }
